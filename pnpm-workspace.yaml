@@ -1,0 +1,9 @@
+minimumReleaseAge: 10080
+trustPolicy: no-downgrade
+overrides:
+  semver: ^7.6.3
+allowBuilds:
+  '@parcel/watcher': false
+  core-js: set this to true or false
+  esbuild: false
+

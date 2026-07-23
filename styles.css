@@ -1,0 +1,233 @@
+@import "tailwindcss";
+
+@plugin "daisyui" {
+    themes: dark --prefersdark, Aurora --default;
+}
+
+/* e9f0f8 - 100 */
+/* dfe9f0 - 200 */
+/* f5fdff - 300 */
+@plugin "daisyui/theme" {
+    name: "Aurora";
+    default: true;
+    prefersdark: false;
+    color-scheme: "light";
+    --color-base-100: #edf3fb;
+    --color-base-200: #ffffff;
+    --color-base-300: #dce7f3;
+    --color-base-content: oklch(21% 0.006 285.885);
+    --color-primary: oklch(45% 0.24 277.023);
+    --color-primary-content: oklch(93% 0.034 272.788);
+    --color-secondary: oklch(65% 0.241 354.308);
+    --color-secondary-content: oklch(94% 0.028 342.258);
+    --color-accent: oklch(77% 0.152 181.912);
+    --color-accent-content: oklch(38% 0.063 188.416);
+    --color-neutral: oklch(20% 0.005 285.823);
+    --color-neutral-content: oklch(92% 0.004 286.32);
+    --color-info: oklch(74% 0.16 232.661);
+    --color-info-content: oklch(29% 0.066 243.157);
+    --color-success: oklch(76% 0.177 163.223);
+    --color-success-content: oklch(37% 0.077 168.94);
+    --color-warning: oklch(82% 0.189 84.429);
+    --color-warning-content: oklch(41% 0.112 45.904);
+    --color-error: oklch(71% 0.194 13.428);
+    --color-error-content: oklch(27% 0.105 12.094);
+    --radius-selector: 1rem;
+    --radius-field: 0.5rem;
+    --radius-box: 2rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 2;
+    --noise: 0;
+}
+
+/* 161d27 - 100 */
+/* 1d2632 - 200 */
+/* 273242 - 300 */
+/* @plugin "daisyui/theme" {
+    name: "modern-dark";
+    default: false;
+    prefersdark: true;
+    color-scheme: "dark";
+
+    --color-base-100: #273242;
+    --color-base-200: #1d2632;
+    --color-base-300: #161d27;
+    --color-base-content: oklch(95% 0.01 270);
+
+    --color-primary: oklch(68% 0.21 277);
+    --color-primary-content: oklch(20% 0.03 277);
+
+    --color-secondary: oklch(71% 0.20 354);
+    --color-secondary-content: oklch(18% 0.02 354);
+
+    --color-accent: oklch(79% 0.15 182);
+    --color-accent-content: oklch(22% 0.04 182);
+
+    --color-neutral: oklch(24% 0.01 280);
+    --color-neutral-content: oklch(94% 0.01 280);
+
+    --color-info: oklch(73% 0.15 232);
+    --color-info-content: oklch(19% 0.03 232);
+
+    --color-success: oklch(76% 0.17 163);
+    --color-success-content: oklch(20% 0.04 163);
+
+    --color-warning: oklch(83% 0.18 84);
+    --color-warning-content: oklch(22% 0.06 84);
+
+    --color-error: oklch(70% 0.19 13);
+    --color-error-content: oklch(18% 0.04 13);
+
+    --radius-selector: 1rem;
+    --radius-field: 0.5rem;
+    --radius-box: 2rem;
+
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+
+    --border: 1px;
+    --depth: 2;
+    --noise: 0;
+} */
+
+
+/* Customizations for react-day-picker to follow DaisyUI theme colors */
+.rdp-root {
+    --rdp-accent-color: var(--color-primary) !important;
+    --rdp-accent-background-color: var(--color-primary) !important;
+}
+
+/* Selected Day styling */
+.rdp-day_selected,
+.rdp-day_selected:hover,
+.rdp-day_selected:focus,
+.rdp-day_selected:active {
+    background-color: var(--color-primary) !important;
+    color: var(--color-primary-content) !important;
+}
+
+/* Today styling */
+.rdp-day_today:not(.rdp-day_selected) {
+    color: var(--color-primary) !important;
+    font-weight: bold;
+}
+
+/* Navigation buttons (chevrons and arrows) styling */
+.rdp-chevron {
+    fill: var(--color-base-content) !important;
+}
+
+.rdp-nav_button {
+    color: var(--color-base-content) !important;
+}
+
+.rdp-nav_button:hover {
+    background-color: var(--color-base-200) !important;
+}
+
+/* Custom scrollbar rules */
+.scrollbar-thin::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+    background: currentColor;
+    opacity: 0.15;
+    border-radius: 9999px;
+}
+
+.scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-base-content) transparent;
+}
+
+/* Hide scrollbars */
+.scrollbar-none::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Keyframes and Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(8px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0.96);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.2s ease-out forwards;
+}
+
+.animate-slide-up {
+    animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-in {
+    animation: scaleIn 0.15s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Overrides para react-color ChromePicker (compatible con temas DaisyUI) */
+.chrome-picker {
+    background-color: var(--color-base-100) !important;
+    border-color: var(--color-base-300) !important;
+    color: var(--color-base-content) !important;
+    font-family: inherit !important;
+}
+
+.chrome-picker input {
+    color: var(--color-base-content) !important;
+    background-color: var(--color-base-200) !important;
+    border: 1px solid var(--color-base-300) !important;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+}
+
+.chrome-picker span,
+.chrome-picker label {
+    color: var(--color-base-content) !important;
+    opacity: 0.7 !important;
+}
+
+.chrome-picker svg {
+    fill: var(--color-base-content) !important;
+    color: var(--color-base-content) !important;
+}
