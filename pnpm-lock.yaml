@@ -50,6 +50,9 @@ importers:
       react-router:
         specifier: ^7.13.0
         version: 7.18.1(react-dom@19.0.0-rc.1(react@19.0.0-rc.1))(react@19.0.0-rc.1)
+      reicon-react:
+        specifier: ^1.1.301
+        version: 1.1.301(react@19.0.0-rc.1)
       tailwindcss:
         specifier: ^4.3.2
         version: 4.3.3
@@ -1132,6 +1135,11 @@ packages:
     resolution: {integrity: sha512-NZKln+uyPuyHchzP07I6GGYFxdAoaKhehgpCa3ltJGzwE31OYumLeshGaitA1R/fS5d9D2qpZVwTFAr6zCLM9w==}
     engines: {node: '>=0.10.0'}
 
+  reicon-react@1.1.301:
+    resolution: {integrity: sha512-goRHjdKeWTLrypqS5xOGaiV0U6oCL2ZyvQNQJLq11xxk0laOLGFKkqiI54rzdVxj2Eea2Vkw5D0AmTmHaTYtDA==}
+    peerDependencies:
+      react: '>=16.8.0'
+
   reusify@1.1.0:
     resolution: {integrity: sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw==}
     engines: {iojs: '>=1.0.0', node: '>=0.10.0'}
@@ -2101,6 +2109,10 @@ snapshots:
       react-dom: 19.0.0-rc.1(react@19.0.0-rc.1)
 
   react@19.0.0-rc.1: {}
+
+  reicon-react@1.1.301(react@19.0.0-rc.1):
+    dependencies:
+      react: 19.0.0-rc.1
 
   reusify@1.1.0: {}
 
