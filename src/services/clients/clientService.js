@@ -1,6 +1,6 @@
 import { supabaseClient } from "../../utils/supabase";
 
-export async function getUsers({
+export async function getClients({
     pageIndex = 0,
     pageSize = 10,
     organization_id = null,
@@ -51,32 +51,39 @@ export async function getUsers({
     };
 }
 
-export async function createClient({ organization_id, names, lastnames, client_phone, client_email }) {
+export async function createClient({ organization_id, names, lastnames, phone, client_phone, email, client_email }) {
+    const phoneVal = phone !== undefined ? phone : client_phone;
+    const emailVal = email !== undefined ? email : client_email;
+
     const { data, error } = await supabaseClient
         .from("tbl_customers")
         .insert({
             organization_id,
             names,
             lastnames,
-            phone: client_phone,
-            email: client_email,
+            phone: phoneVal,
+            email: emailVal,
         })
 
     if (error) {
+        console.log("error: ", error)
         throw error;
     }
     return data;
 }
 
-export async function updateUser({ id, organization_id, names, lastnames, client_phone, client_email }) {
+export async function updateUser({ id, organization_id, names, lastnames, phone, client_phone, email, client_email }) {
+    const phoneVal = phone !== undefined ? phone : client_phone;
+    const emailVal = email !== undefined ? email : client_email;
+    
     const { data, error } = await supabaseClient
         .from("tbl_customers")
         .update({
             organization_id,
             names,
             lastnames,
-            phone: client_phone,
-            email: client_email,
+            phone: phoneVal,
+            email: emailVal,
         })
         .eq("id", id)
 
