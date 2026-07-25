@@ -1,6 +1,6 @@
 import { createBrowserRouter, useRouteError } from "react-router";
 import { lazy, Suspense } from "react";
-import AuthProvider from "./utils/AuthContext";
+import AuthProvider from "./utils/context/AuthContext";
 import Layout from "./Layout";
 
 // DEFAULT PAGES

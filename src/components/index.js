@@ -6,3 +6,6 @@ export { default as Alert } from './Alert';
 // IMGAGES COMPONENTS
 export { default as GalleryPanel } from './images/GalleryPanel'
 export { default as UploadPanel } from './images/UploadPanel'
+
+// CLIENTS COMPONENTS
+export { default as ClientsTable } from './clients/ClientsTable'

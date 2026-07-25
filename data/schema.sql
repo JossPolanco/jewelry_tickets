@@ -147,6 +147,28 @@ create index idx_tbl_order_items_service_order on public.tbl_order_items(service
 create index idx_tbl_order_items_active on public.tbl_order_items(active);
 
 -- ==========================================
+-- 4. TABLA INTERMEDIA:  USUARIOS POR ORGANIZACIÓN
+-- ==========================================
+create table public.tbl_organization_members (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid references public.tbl_organizations(id) on delete cascade not null,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  role text not null default 'owner' check (role in ('owner', 'admin', 'employee', 'dev')),
+  
+  -- Campos de auditoría exigidos en tus reglas
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone null,
+  updated_by uuid references auth.users(id) on delete set null,
+  active boolean default true not null,
+
+  -- Un usuario solo puede pertenecer una vez a la misma organización
+  unique(organization_id, user_id)
+);
+
+create index idx_tbl_org_members_user on public.tbl_organization_members(user_id);
+
+-- ==========================================
 -- 7. TABLA: HISTORIAL DE PAGOS / ABONOS
 -- ==========================================
 create table public.tbl_payments (
@@ -176,6 +198,8 @@ create trigger trg_tbl_customers_updated before update on public.tbl_customers f
 create trigger trg_tbl_service_orders_updated before update on public.tbl_service_orders for each row execute function public.fn_set_updated_at();
 create trigger trg_tbl_order_items_updated before update on public.tbl_order_items for each row execute function public.fn_set_updated_at();
 create trigger trg_tbl_payments_updated before update on public.tbl_payments for each row execute function public.fn_set_updated_at();
+create trigger trg_tbl_organization_members_updated before update on public.tbl_organization_members for each row execute function public.fn_set_updated_at();
+
 
 -- ==========================================
 -- 9. SEGURIDAD (ROW LEVEL SECURITY - RLS)
@@ -187,6 +211,7 @@ alter table public.tbl_customers enable row level security;
 alter table public.tbl_service_orders enable row level security;
 alter table public.tbl_order_items enable row level security;
 alter table public.tbl_payments enable row level security;
+alter table public.tbl_organization_members enable row level security;
 
 -- Políticas de acceso: Permitir CRUD completo ÚNICAMENTE a usuarios autenticados
 create policy "CRUD Autenticados en tbl_organizations" on public.tbl_organizations for all to authenticated using (true) with check (true);
@@ -195,6 +220,7 @@ create policy "CRUD Autenticados en tbl_customers" on public.tbl_customers for a
 create policy "CRUD Autenticados en tbl_service_orders" on public.tbl_service_orders for all to authenticated using (true) with check (true);
 create policy "CRUD Autenticados en tbl_order_items" on public.tbl_order_items for all to authenticated using (true) with check (true);
 create policy "CRUD Autenticados en tbl_payments" on public.tbl_payments for all to authenticated using (true) with check (true);
+create policy "CRUD Autenticados en tbl_organization_members" on public.tbl_organization_members for all to authenticated using (true) with check (true);
 
 -- Politica para jewelry-photos
 CREATE POLICY "Permitir subida a usuarios autenticados en jewelry-photos"
