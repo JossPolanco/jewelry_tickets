@@ -1,4 +1,5 @@
-import { Mail, Lock, Heart, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Ticket } from 'reicon-react';
 import { loginUser } from '../../services/auth/authService';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -50,18 +51,19 @@ export default function Login() {
             <div className="w-full max-w-md">
                 <div className="flex flex-col items-center text-center mb-6 px-2">
                     <div className="bg-primary/10 p-4 rounded-full mb-4 animate-pulse">
-                        <Heart
+                        <Ticket 
                             size={32}
+                            weight="Filled"
                             className="text-primary fill-primary"
                         />
                     </div>
 
                     <h1 className="text-4xl font-bold tracking-tight text-base-content">
-                        Tickets
+                        Ordenes de servicio
                     </h1>
 
                     <p className="text-base-content mt-3 text-sm leading-relaxed max-w-sm">
-                        Un espacio para guardar todos tus recuerdos y momentos especiales.
+                        Un espacio para generar ordenes de servicio.
                     </p>
                 </div>
 

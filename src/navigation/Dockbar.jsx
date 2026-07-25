@@ -1,4 +1,5 @@
-import { Settings, House, PenLine, MessageCircleMore } from 'lucide-react';
+import { Settings, House } from 'lucide-react';
+import { Bill, Users3 } from 'reicon-react';
 import { useNavigate } from 'react-router';
 import { useState } from 'react';
 
@@ -16,19 +17,19 @@ export default function Dockbar({ children }) {
             {children}
 
             <div className="dock">
-                <button type="button" className={active === 'drawing' ? 'dock-active' : ''} onClick={() => setDockActive('drawing', '/drawing')}>
-                    <PenLine size={18} />
-                    <span className="dock-label">Dibujo</span>
+                <button type="button" className={active === 'order' ? 'dock-active' : ''} onClick={() => setDockActive('order', '/service-orders')}>
+                    <Bill size={18} />
+                    <span className="dock-label">Ordenes</span>
                 </button>
 
-                <button type="button" className={active === 'chat' ? 'dock-active' : ''} onClick={() => setDockActive('chat', '/chat')}>
-                    <MessageCircleMore size={18} />
-                    <span className="dock-label">Chat</span>
+                <button type="button" className={active === 'chat' ? 'dock-active' : ''} onClick={() => setDockActive('chat', '/clients')}>
+                    <Users3  size={18} />
+                    <span className="dock-label">Clientes</span>
                 </button>
 
                 <button type="button" className={active === 'home' ? 'dock-active' : ''} onClick={() => setDockActive('home', '/home')} >
                     <House size={18} />
-                    <span className="dock-label">Hogar</span>
+                    <span className="dock-label">Inicio</span>
                 </button>
 
                 <button type="button" className={active === 'config' ? 'dock-active' : ''} onClick={() => setDockActive('config', '/config')}>

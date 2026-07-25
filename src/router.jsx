@@ -3,7 +3,7 @@ import { lazy, Suspense } from "react";
 import AuthProvider from "./utils/AuthContext";
 import Layout from "./Layout";
 
-// Lazy loaded page components
+// DEFAULT PAGES
 const Login = lazy(() => import("./pages/user/Login"));
 const Register = lazy(() => import("./pages/user/Register"));
 const PasswordRegistration = lazy(() => import("./pages/user/PasswordRegistration"));
@@ -11,6 +11,12 @@ const Configuration = lazy(() => import("./pages/user/Configuration"));
 const Home = lazy(() => import("./pages/Home"));
 const TestingPage = lazy(() => import("./pages/TestingPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+
+// CLIENTS PAGES
+const Clients = lazy(() => import("./pages/clients/Clients"));
+
+// ORDERS PAGES
+const Orders = lazy(() => import("./pages/orders/ServiceOrders"));
 
 const PageLoader = () => (
     <div className="flex items-center justify-center min-h-[60vh]">
@@ -73,14 +79,6 @@ export const router = createBrowserRouter([
                 element: <LazyPage><PasswordRegistration /></LazyPage>
             },
             {
-                path: "/drawing",
-                element: (
-                    <Layout>
-                        <LazyPage><DrawingPage /></LazyPage>
-                    </Layout>
-                ),
-            },
-            {
                 path: "/testing",
                 element: (
                     <Layout>
@@ -96,148 +94,27 @@ export const router = createBrowserRouter([
                     </Layout>
                 ),
             },
-            {
-                path: "/chat",
-                element: (
-                    <LazyPage><Chat /></LazyPage>
-                )
-            },
-            {
-                path: "/starred-messages",
-                element: (
-                    <LazyPage><StarredMessages /></LazyPage>
-                )
-            },
-            {
-                path: "/tasks",
+            { // CLIENTS
+                path: "/clients",
                 element: (
                     <Layout>
-                        <LazyPage><Tasks /></LazyPage>
+                        <LazyPage><Clients /></LazyPage>
                     </Layout>
-                )
+                ),
             },
-            {
-                path: "/task/:id",
+            { // ORDERS
+                path: "/service-orders",
                 element: (
                     <Layout>
-                        <LazyPage><TaskDetail /></LazyPage>
+                        <LazyPage><Orders /></LazyPage>
                     </Layout>
-                )
+                ),
             },
-            {
-                path: "/dates",
-                element: (
-                    <Layout>
-                        <LazyPage><Dates /></LazyPage>
-                    </Layout>
-                )
-            },
-            {
-                path: "/date/:id",
-                element: (
-                    <Layout>
-                        <LazyPage><DateDetail /></LazyPage>
-                    </Layout>
-                )
-            },
-            {
-                path: "/notes",
-                element: (
-                    <Layout>
-                        <LazyPage><Notes /></LazyPage>
-                    </Layout>
-                )
-            },
-            {
-                path: "/notes-gallery",
-                element: (
-                    <Layout>
-                        <LazyPage><NotesGallery /></LazyPage>
-                    </Layout>
-                )
-            },
-            {
-                path: "/diary",
-                element: (
-                    <Layout>
-                        <LazyPage><Diary /></LazyPage>
-                    </Layout>
-                )
-            },
-            {
-                path: "/diary-detail/:currentDate",
-                element: (
-                    <Layout>
-                        <LazyPage><DiaryDetail /></LazyPage>
-                    </Layout>
-                )
-            },
-            {
-                path: "/anniversaries",
-                element: (
-                    <Layout>
-                        <LazyPage><Anniversaries /></LazyPage>
-                    </Layout>
-                )
-            },
-            {
-                path: "/anniversary-detail/:id",
-                element: (
-                    <Layout>
-                        <LazyPage><AnniversaryDetail /></LazyPage>
-                    </Layout>
-                )
-            },
-            {
-                path: "/geolocation",
-                element: (
-                    <Layout>
-                        <LazyPage><Geolocation /></LazyPage>
-                    </Layout>
-                )
-            },
-            {
-                path: "/games",
-                element: (
-                    <Layout>
-                        <LazyPage><Games /></LazyPage>
-                    </Layout>
-                )
-            },
-            {
-                path: "/pinturillo",
-                element: (
-                    <Layout>
-                        <LazyPage><Pinturillo /></LazyPage>
-                    </Layout>
-                )
-            },
-            {
-                path: "/pinturillo/newgame",
-                element: (
-                    <Layout>
-                        <LazyPage><PintNewGame /></LazyPage>
-                    </Layout>
-                )
-            },
-            {
-                path: "pinturillo/play/:id",
-                element: (
-                    <Layout>
-                        <LazyPage><PinturilloGuess /></LazyPage>
-                    </Layout>
-                )
-            }
         ]
     },
     {
         path: "*",
         element: <LazyPage><NotFound /></LazyPage>,
         errorElement: <RootErrorBoundary />
-    },
-    {
-        path: "/anniversary",
-        element: <LazyPage><Anniversary /></LazyPage>,
-        errorElement: <RootErrorBoundary />
     }
-], { basename: '/tickets' });
+], { basename: import.meta.env.BASE_URL });

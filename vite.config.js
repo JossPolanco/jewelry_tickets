@@ -10,7 +10,7 @@ export default defineConfig({
             '@': path.resolve(__dirname, './src'),
         },
     },
-    base: '/tickets',
+    base: process.env.VITE_BASE_PATH || '/',
     build: {
         chunkSizeWarningLimit: 1000,
         rollupOptions: {

@@ -65,7 +65,7 @@ export default function Register() {
 
                             <p className="text-base-content/70 mt-2 text-sm">
                                 Ingresa tu correo y se te enviará un enlace
-                                mágico para acceder a NearU, wonita.
+                                mágico para darte de alta.
                             </p>
                         </div>
 

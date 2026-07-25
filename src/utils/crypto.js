@@ -33,8 +33,8 @@ async function getKey() {
     if (cachedKey) return cachedKey;
 
     // Lee la clave de encriptación desde la variable de entorno de Vite
-    const secret = import.meta.env.VITE_ENCRYPTION_KEY;
-    if (!secret) throw new Error("VITE_ENCRYPTION_KEY no definida");
+    const secret = import.meta.env.VITE_ENCRYPTION;
+    if (!secret) throw new Error("VITE_ENCRYPTION no definida");
 
     cachedKey = await deriveKey(secret);
     return cachedKey;

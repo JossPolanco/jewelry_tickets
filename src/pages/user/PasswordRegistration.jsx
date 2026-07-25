@@ -44,7 +44,7 @@ export default function PasswordRegistration() {
     };
 
     return (
-        <div className="min-h-screen bg-base-200 flex items-center justify-center px-4 py-8">
+        <div className="min-h-screen bg-base-300 flex items-center justify-center px-4 py-8">
             <div className="w-full max-w-md">
                 {/* Botón volver */}
                 <button type="button"
@@ -55,7 +55,7 @@ export default function PasswordRegistration() {
                     Volver
                 </button>
 
-                <div className="card bg-base-100 rounded-3xl border border-base-200/50 shadow-sm">
+                <div className="card bg-base-100 rounded-3xl border border-base-200 shadow-sm">
                     <div className="card-body p-6 md:p-8 gap-5">
                         <div className="flex flex-col items-center text-center">
                             <div className="bg-primary/10 p-4 rounded-full mb-3">
