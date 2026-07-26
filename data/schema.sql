@@ -96,7 +96,7 @@ create table public.tbl_service_orders (
     check (status in ('Recibido', 'En Proceso', 'Listo', 'Entregado', 'Cancelado', 'Pendiente', 'Reparación')),
   
   total_estimated_cost numeric(10, 2) not null default 0.00,
-  advance_payment numeric(10, 2) not null default 0.00,
+  advance_payment numeric(10, 2) default 0.00,
   
   -- Firma digital capturada como vectores/puntos JSON desde react-signature-canvas
   signature_data jsonb null, 
@@ -133,7 +133,6 @@ create table public.tbl_order_items (
   
   -- Arreglo de UUIDs pertenecientes a la tabla tbl_image_metadata
   photo_ids uuid[] default '{}'::uuid[],
-  delivered_at timestamp with time zone null, -- Control individual por pieza
   
   -- Campos de control / auditoría
   created_by uuid references auth.users(id) on delete set null,

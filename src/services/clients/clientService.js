@@ -51,6 +51,25 @@ export async function getClients({
     };
 }
 
+export async function searchClient({ organization_id, search }) {
+    if (!search || !search.trim()) return [];
+    const orgId = organization_id;
+    const term = `%${search.trim()}%`;
+
+    const { data, error } = await supabaseClient
+        .from("tbl_customers")
+        .select("full_name, names, lastnames, phone, email, id")
+        .eq("organization_id", orgId)
+        .eq("active", true)
+        .or(`full_name.ilike.${term},phone.ilike.${term},email.ilike.${term}`)
+        .limit(10);
+
+    if (error) {
+        throw error;
+    }
+    return data || [];
+}
+
 export async function createClient({ organization_id, names, lastnames, phone, client_phone, email, client_email }) {
     const phoneVal = phone !== undefined ? phone : client_phone;
     const emailVal = email !== undefined ? email : client_email;
