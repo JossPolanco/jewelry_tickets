@@ -1,4 +1,4 @@
-const ITEM_TYPES = {
+export const ITEM_TYPES = {
     RING: 'Anillo',
     EARRING: 'Arete',
     PENDANT: 'Dije',

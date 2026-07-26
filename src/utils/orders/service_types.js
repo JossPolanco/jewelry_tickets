@@ -1,4 +1,4 @@
-const SERVICE_TYPES = {
+export const SERVICE_TYPES = {
     REPAIR: 'Reparación',
     ADJUSTMENT: 'Ajuste de medida',
     ENGRAVING: 'Grabado',

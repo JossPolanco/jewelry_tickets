@@ -1,8 +1,8 @@
-import React, { useState, useRef } from 'react';
-import { Package, Wrench, MessageSquare, Plus, Trash2, Edit3, Scale, Tag, AlertCircle, CheckCircle2 } from 'lucide-react';
-import ITEM_TYPES from '../../../utils/orders/item_types.js';
-import SERVICE_TYPES from '../../../utils/orders/service_types.js';
+import { Package, Wrench, MessageSquare, Plus, Trash2, Edit3, Scale, Tag, AlertCircle, Weight, Hammer } from 'lucide-react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
+import React, { useState, useRef } from 'react';
+import { ITEM_TYPES, SERVICE_TYPES } from '@/utils'
+import { Memo } from 'reicon-react';
 import Modal from '@/components/Modal';
 
 export default function StepItems() {
@@ -64,7 +64,7 @@ export default function StepItems() {
         const errorsObj = {};
         if (!formData.item_type) errorsObj.item_type = 'Selecciona un tipo de joya';
         if (!formData.description?.trim()) errorsObj.description = 'Ingresa la descripción de la pieza';
-        
+
         const parsedWeight = parseFloat(formData.initial_weight_grams);
         if (formData.initial_weight_grams === '' || isNaN(parsedWeight) || parsedWeight < 0) {
             errorsObj.initial_weight_grams = 'Ingresa un peso válido (0 o mayor)';
@@ -99,32 +99,29 @@ export default function StepItems() {
     };
 
     return (
-        <div className="space-y-4 py-1 animate-fade-in">
-            {/* ENCABEZADO DEL PASO 2 */}
-            <div className="border-b border-base-200 pb-2.5 flex items-center justify-between gap-2">
-                <div>
-                    <div className="flex items-center gap-2">                        
-                        <h3 className="text-sm sm:text-base font-bold text-base-content flex items-center gap-1.5">
-                            <Package className="w-4 h-4 text-primary" />
-                            Piezas / Joyas a Procesar
-                        </h3>
-                    </div>
-                    <p className="text-xs text-base-content/70 mt-0.5">
-                        Registra las joyas y trabajos para esta orden.
-                    </p>
+        <div className="space-y-3 py-0.5 animate-fade-in">
+            {/* ENCABEZADO ÚNICO COMPACTO */}
+            <div className="flex items-center justify-between gap-2 border-b border-base-200 pb-2">
+                <div className="flex items-center gap-1.5">
+                    <Package className="w-4 h-4 text-primary shrink-0" />
+                    <h3 className="text-xs sm:text-sm font-bold text-base-content">
+                        Piezas Registradas ({fields.length})
+                    </h3>
                 </div>
 
-                {fields.length > 0 && (
-                    <div className="flex items-center gap-1 px-2.5 py-1 bg-primary/10 border border-primary/20 rounded-full text-xs font-bold text-primary shrink-0">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-                        <span>{fields.length} {fields.length === 1 ? 'Pieza' : 'Piezas'}</span>
-                    </div>
-                )}
+                <button
+                    type="button"
+                    onClick={handleOpenAddModal}
+                    className="btn btn-primary btn-sm h-8 rounded-xl px-3 font-bold gap-1 active:scale-95 transition-all text-xs"
+                >
+                    <Plus className="w-3.5 h-3.5" />
+                    Añadir pieza
+                </button>
             </div>
 
             {/* ALERTA SI INTENTA AVANZAR SIN ITEMS */}
             {errors?.items && fields.length === 0 && (
-                <div className="alert alert-error shadow-xs rounded-xl py-2.5 text-xs font-medium flex items-center gap-2">
+                <div className="alert alert-error shadow-xs rounded-xl py-2 text-xs font-medium flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 shrink-0" />
                     <span>Debe agregar al menos una pieza para continuar.</span>
                 </div>
@@ -132,116 +129,99 @@ export default function StepItems() {
 
             {/* ESTADO VACÍO (EMPTY STATE COMPACTO) */}
             {fields.length === 0 ? (
-                <div className="bg-base-100 border-2 border-dashed border-base-300 rounded-2xl p-5 text-center flex flex-col items-center justify-center gap-2.5 animate-fade-in shadow-2xs">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                        <Package className="w-6 h-6" />
+                <div className="bg-base-100 border-2 border-dashed border-base-300 rounded-2xl p-4 text-center flex flex-col items-center justify-center gap-2 animate-fade-in shadow-2xs">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                        <Package className="w-5 h-5" />
                     </div>
                     <div className="max-w-xs">
-                        <h4 className="text-sm font-bold text-base-content">
+                        <h4 className="text-xs sm:text-sm font-bold text-base-content">
                             No hay piezas registradas
                         </h4>
-                        <p className="text-xs text-base-content/60 mt-0.5">
-                            Añade al menos una pieza a reparar o fabricar para esta orden.
+                        <p className="text-[11px] sm:text-xs text-base-content/60 mt-0.5">
+                            Añade la primera joya o trabajo a realizar.
                         </p>
                     </div>
                     <button
                         type="button"
                         onClick={handleOpenAddModal}
-                        className="btn btn-primary btn-md h-11 px-5 rounded-xl text-xs sm:text-sm font-bold shadow-xs gap-2 active:scale-95 transition-all mt-1"
+                        className="btn btn-primary btn-sm h-9 px-4 rounded-xl text-xs font-bold shadow-xs gap-1.5 active:scale-95 transition-all mt-1"
                     >
-                        <Plus className="w-4 h-4" />
+                        <Plus className="w-3.5 h-3.5" />
                         Agregar Primera Pieza
                     </button>
                 </div>
             ) : (
-                /* LISTA DE PIEZAS REGISTRADAS COMPACTA */
-                <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-base-content/60">
-                            Piezas en esta orden ({fields.length})
-                        </span>
-                        <button
-                            type="button"
-                            onClick={handleOpenAddModal}
-                            className="btn btn-primary btn-sm rounded-xl px-3 font-bold gap-1 active:scale-95 transition-all text-xs"
-                        >
-                            <Plus className="w-3.5 h-3.5" />
-                            Añadir pieza
-                        </button>
-                    </div>
+                /* LISTA DE PIEZAS ULTRA COMPACTA */
+                <div className="grid grid-cols-1 gap-2">
+                    {fields.map((item, index) => {
+                        const typeDisplay = ITEM_TYPES[item.item_type] || item.item_type;
+                        const serviceDisplay = SERVICE_TYPES[item.service_requested] || item.service_requested;
 
-                    <div className="grid grid-cols-1 gap-2.5">
-                        {fields.map((item, index) => {
-                            const typeDisplay = ITEM_TYPES[item.item_type] || item.item_type;
-                            const serviceDisplay = SERVICE_TYPES[item.service_requested] || item.service_requested;
-
-                            return (
-                                <div
-                                    key={item.id}
-                                    className="bg-base-100 border border-base-200 hover:border-primary/40 rounded-xl p-3 shadow-2xs transition-all space-y-2 animate-fade-in"
-                                >
-                                    {/* CARD HEADER COMPACTO */}
-                                    <div className="flex items-center justify-between gap-2">
-                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                            <span className="badge badge-primary badge-sm font-bold text-[11px] h-5">
-                                                #{index + 1}
-                                            </span>
-                                            <span className="bg-primary/10 text-primary border border-primary/20 font-bold px-2 py-0.5 rounded-md text-[11px]">
-                                                {typeDisplay}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex items-center gap-1">
-                                            <button
-                                                type="button"
-                                                onClick={() => handleOpenEditModal(index)}
-                                                className="btn btn-ghost btn-xs btn-circle text-primary hover:bg-primary/10"
-                                                title="Editar pieza"
-                                                aria-label="Editar pieza"
-                                            >
-                                                <Edit3 className="w-3.5 h-3.5" />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => remove(index)}
-                                                className="btn btn-ghost btn-xs btn-circle text-error hover:bg-error/10"
-                                                title="Eliminar pieza"
-                                                aria-label="Eliminar pieza"
-                                            >
-                                                <Trash2 className="w-3.5 h-3.5" />
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* DESCRIPCIÓN */}
-                                    <h4 className="text-sm font-bold text-base-content leading-snug break-words">
-                                        {item.description}
-                                    </h4>
-
-                                    {/* DETALLES EN LÍNEA */}
-                                    <div className="flex flex-wrap items-center gap-1.5">
-                                        <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-md bg-base-200/80 text-base-content/80 border border-base-300/40">
-                                            <Scale className="w-3 h-3 text-primary" />
-                                            <span>Peso: {item.initial_weight_grams} g</span>
+                        return (
+                            <div
+                                key={item.id}
+                                className="bg-base-100 border border-base-200 hover:border-primary/40 rounded-xl p-2.5 sm:p-3 shadow-2xs transition-all space-y-1 animate-fade-in"
+                            >
+                                {/* FILA 1: BADGE TIPO DE JOYA + ACCIONES */}
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="bg-primary/10 text-primary border border-primary/20 font-bold px-2 py-0.5 rounded-md text-[11px] flex items-center gap-1">
+                                            <Package className="w-3 h-3 shrink-0" />
+                                            #{index + 1} {typeDisplay}
+                                        </span>
+                                        <span className="bg-primary/10 text-primary border border-primary/20 font-bold px-2 py-0.5 rounded-md text-[11px] flex items-center gap-1">
+                                            <Hammer className="w-3 h-3 shrink-0" />
+                                            {serviceDisplay}
                                         </span>
 
-                                        <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
-                                            <Wrench className="w-3 h-3 text-primary" />
-                                            <span>Servicio: {serviceDisplay}</span>
-                                        </span>
                                     </div>
 
-                                    {/* OBSERVACIONES COMPACTAS */}
+                                    <div className="flex items-center gap-0.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenEditModal(index)}
+                                            className="btn btn-ghost btn-xs btn-circle text-primary hover:bg-primary/10"
+                                            title="Editar pieza"
+                                            aria-label="Editar pieza"
+                                        >
+                                            <Edit3 className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => remove(index)}
+                                            className="btn btn-ghost btn-xs btn-circle text-error hover:bg-error/10"
+                                            title="Eliminar pieza"
+                                            aria-label="Eliminar pieza"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* FILA 2: DESCRIPCIÓN PRINCIPAL */}
+                                <p className="font-bold text-xs sm:text-sm text-base-content leading-snug wrap-break-words px-0.5">
+                                    {item.description}
+                                </p>
+
+                                {/* FILA 3: METADATOS EN LÍNEA ÚNICA */}
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-base-content/70 pt-0.5 px-0.5">
+                                    <span className="flex flex-row gap-1 font-semibold text-base-content/90">
+                                        <Weight className="w-3.5 h-3.5" />
+                                        {item.initial_weight_grams} g
+                                    </span>
                                     {item.material_details && item.material_details !== 'Sin observaciones' && (
-                                        <div className="text-xs text-base-content/70 flex items-center gap-1.5 italic bg-base-200/50 rounded-lg px-2.5 py-1 border border-base-200">
-                                            <MessageSquare className="w-3 h-3 text-base-content/40 shrink-0" />
-                                            <span className="truncate">{item.material_details}</span>
-                                        </div>
+                                        <>
+                                            <span className="text-base-content/30">•</span>
+                                            <span className="italic text-base-content/60 truncate max-w-40 sm:max-w-xs flex flex-row gap-1">
+                                                <Memo className="w-3.5 h-3.5 shrink-0" />
+                                                {item.material_details}
+                                            </span>
+                                        </>
                                     )}
                                 </div>
-                            );
-                        })}
-                    </div>
+                            </div>
+                        );
+                    })}
                 </div>
             )}
 
