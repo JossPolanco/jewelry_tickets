@@ -13,8 +13,8 @@ const itemSchema = z.object({
     service_order_id: z.string().optional(),
     item_type: z.string().min(1, "Tipo de item requerido"),
     description: z.string().min(1, "Descripción del item requerido"),
-    initial_weight_grams: z.number().min(0, "Peso inicial en gramos requerido"),
-    material_details: z.string().min(1, "Detalles del material requerido"),
+    initial_weight_grams: z.coerce.number({ invalid_type_error: "El peso debe ser un número válido" }).min(0, "Peso inicial en gramos requerido"),
+    material_details: z.string().optional().default(""),
     service_requested: z.string().min(1, "Servicio solicitado requerido"),
     photo_ids: z.array(z.string()).optional().default([]),
 })
@@ -65,6 +65,7 @@ export default function CreateOrderWizard() {
         let fieldsToValidate = [];
 
         if (currentStep === 1) fieldsToValidate = ['customer_id'];
+        if (currentStep === 2) fieldsToValidate = ['items'];
 
         const isStepValid = await methods.trigger(fieldsToValidate);
 
@@ -102,7 +103,7 @@ export default function CreateOrderWizard() {
     return (
         <div className="w-full flex flex-col space-y-6">
             <FormProvider {...methods}>
-                <form className="w-full flex flex-col space-y-6">
+                <div className="w-full flex flex-col space-y-6">
                     {/* Stepper Header */}
                     <div className="w-full">
                         <ul className="steps steps-horizontal w-full text-xs sm:text-sm font-medium">
@@ -166,7 +167,7 @@ export default function CreateOrderWizard() {
                             </button>
                         )}
                     </div>
-                </form>
+                </div>
             </FormProvider>
         </div>
     );

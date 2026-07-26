@@ -78,7 +78,7 @@ export default function Login() {
                                 <div className="relative">
                                     <input
                                         type="email"
-                                        placeholder="amor@ejemplo.com"
+                                        placeholder="correo@ejemplo.com"
                                         className="input input-bordered w-full pl-10 focus:border-primary focus:outline-none"
                                         {...register("email")}
                                     />
@@ -134,7 +134,7 @@ export default function Login() {
                                 <div className="alert alert-error text-sm py-3 px-4 rounded-xl flex items-start gap-2 shadow-sm">
                                     <span className="text-left">
                                         {loginMutation.error?.message === "Invalid login credentials"
-                                            ? "El correo o la contraseña son incorrectos. Inténtalo de nuevo, mi amor. 💕"
+                                            ? "El correo o la contraseña son incorrectos. Inténtalo de nuevo."
                                             : loginMutation.error?.message || "Ocurrió un error al iniciar sesión."}
                                     </span>
                                 </div>

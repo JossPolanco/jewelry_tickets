@@ -86,7 +86,7 @@ export default function Register() {
                                     <div className="relative">
                                         <input
                                             type="email"
-                                            placeholder="amor@ejemplo.com"
+                                            placeholder="correo@ejemplo.com"
                                             className="input input-bordered w-full pl-10 focus:border-primary focus:outline-none"
                                             {...register("email")}
                                         />
