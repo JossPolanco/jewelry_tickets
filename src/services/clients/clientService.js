@@ -72,39 +72,55 @@ export async function createClient({ organization_id, names, lastnames, phone, c
     return data;
 }
 
-export async function updateUser({ id, organization_id, names, lastnames, phone, client_phone, email, client_email }) {
+export async function updateClient({ id, organization_id, names, lastnames, phone, client_phone, email, client_email }) {
     const phoneVal = phone !== undefined ? phone : client_phone;
     const emailVal = email !== undefined ? email : client_email;
     
+    const updatePayload = {
+        names,
+        lastnames,
+        phone: phoneVal,
+        email: emailVal,
+    };
+
+    if (organization_id) {
+        updatePayload.organization_id = organization_id;
+    }
+
     const { data, error } = await supabaseClient
         .from("tbl_customers")
-        .update({
-            organization_id,
-            names,
-            lastnames,
-            phone: phoneVal,
-            email: emailVal,
-        })
+        .update(updatePayload)
         .eq("id", id)
+        .select();
 
     if (error) {
+        console.error("Error updating client:", error);
         throw error;
     }
     return data;
 }
 
-export async function deleteUser(id) {
+export const updateUser = updateClient;
+
+export async function deleteClient(id) {
+    const targetId = typeof id === 'object' ? id?.id : id;
+
     const { data, error } = await supabaseClient
         .from("tbl_customers")
         .update({
             active: false
         })
-        .eq("id", id)
+        .eq("id", targetId)
+        .select();
 
     if (error) {
+        console.error("Error deleting client:", error);
         throw error;
     }
     return data;
 }
+
+export const deleteUser = deleteClient;
+
 
 

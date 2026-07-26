@@ -1,38 +1,110 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getClients } from '@/services/clients';
-import { useUser } from '@/utils/context/UserContext';
-import { Modal } from '@/components';
 import {
-    Search,
-    ChevronLeft,
-    ChevronRight,
-    MoreVertical,
-    Pencil,
-    Trash2,
-    Phone,
-    Mail,
-    Calendar,
-    X,
-    Users,
-    RefreshCw,
-    User,
-    Info,
-    ExternalLink,
-    BadgeCheck
+    Search, ChevronLeft, ChevronRight, MoreVertical, Pencil, Trash2, Phone, Mail, Calendar, X, Users, RefreshCw,
+    User, Info, ExternalLink, BadgeCheck, AlertCircle, Save
 } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getClients, updateClient, deleteClient } from '@/services/clients';
+import React, { useState, useEffect, useRef } from 'react';
+import { useUser } from '@/utils/context/UserContext';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { Modal } from '@/components';
+import z from 'zod';
+
+const editClientSchema = z.object({
+    names: z.string().min(1, "El nombre es obligatorio"),
+    lastnames: z.string().min(1, "El apellido es obligatorio"),
+    phone: z.string().min(1, "El teléfono es obligatorio"),
+    email: z.string().email("Ingresa un correo electrónico válido").or(z.literal("")).optional(),
+});
 
 export default function ClientsTable() {
+    const queryClient = useQueryClient();
     const { organization } = useUser();
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [pageIndex, setPageIndex] = useState(0);
     const [pageSize, setPageSize] = useState(10);
 
-    // Estado y refs para el modal de lectura al mantener click/touch en una fila
+    // Estado y refs para los modales
     const [selectedClient, setSelectedClient] = useState(null);
+    const [editingClient, setEditingClient] = useState(null);
+    const [deletingClient, setDeletingClient] = useState(null);
+
     const detailModalRef = useRef(null);
+    const editModalRef = useRef(null);
+    const deleteModalRef = useRef(null);
     const timerRef = useRef(null);
+
+    // Formulario de edición
+    const {
+        register: registerEdit,
+        handleSubmit: handleSubmitEdit,
+        reset: resetEdit,
+        formState: { errors: editErrors },
+    } = useForm({
+        resolver: zodResolver(editClientSchema),
+        defaultValues: {
+            names: '',
+            lastnames: '',
+            phone: '',
+            email: '',
+        },
+    });
+
+    const handleOpenEditModal = (client) => {
+        setEditingClient(client);
+        resetEdit({
+            names: client.names || '',
+            lastnames: client.lastnames || '',
+            phone: client.phone || '',
+            email: client.email || '',
+        });
+        editModalRef.current?.open();
+    };
+
+    const updateClientMutation = useMutation({
+        mutationFn: updateClient,
+        onSuccess: () => {
+            queryClient.invalidateQueries(['clients']);
+            editModalRef.current?.close();
+            setEditingClient(null);
+        },
+        onError: (err) => {
+            console.error('Error al actualizar cliente:', err);
+        },
+    });
+
+    const onSubmitEdit = (formData) => {
+        if (!editingClient) return;
+        updateClientMutation.mutate({
+            id: editingClient.id,
+            organization_id: editingClient.organization_id || organization?.organization_id,
+            ...formData,
+        });
+    };
+
+    const handleOpenDeleteModal = (client) => {
+        setDeletingClient(client);
+        deleteModalRef.current?.open();
+    };
+
+    const deleteClientMutation = useMutation({
+        mutationFn: deleteClient,
+        onSuccess: () => {
+            queryClient.invalidateQueries(['clients']);
+            deleteModalRef.current?.close();
+            setDeletingClient(null);
+        },
+        onError: (err) => {
+            console.error('Error al eliminar cliente:', err);
+        },
+    });
+
+    const handleConfirmDelete = () => {
+        if (!deletingClient) return;
+        deleteClientMutation.mutate(deletingClient.id);
+    };
 
     // Debounce de búsqueda para evitar peticiones excesivas
     useEffect(() => {
@@ -281,7 +353,7 @@ export default function ClientsTable() {
                                                             className="flex items-center gap-2 text-xs font-semibold py-2 text-base-content hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                                                             onClick={(e) => {
                                                                 e.currentTarget.blur();
-                                                                // TODO: Implementar funcionalidad de Editar cliente
+                                                                handleOpenEditModal(client);
                                                             }}
                                                         >
                                                             <Pencil className="w-3.5 h-3.5 text-primary" />
@@ -294,7 +366,7 @@ export default function ClientsTable() {
                                                             className="flex items-center gap-2 text-xs font-semibold py-2 text-error hover:bg-error/10 rounded-lg transition-colors"
                                                             onClick={(e) => {
                                                                 e.currentTarget.blur();
-                                                                // TODO: Implementar funcionalidad de Eliminar cliente
+                                                                handleOpenDeleteModal(client);
                                                             }}
                                                         >
                                                             <Trash2 className="w-3.5 h-3.5 text-error" />
@@ -376,7 +448,7 @@ export default function ClientsTable() {
                 {selectedClient && (
                     <div className="space-y-5 pt-2">
                         {/* CABECERA CON AVATAR E IDENTIFICADOR DEL CLIENTE */}
-                        <div className="flex items-center gap-4 p-4 rounded-2xl bg-base-200/50 border border-base-200">
+                        <div className="flex items-center gap-4 p-4 rounded-2xl bg-base-100 border border-base-200">
                             <div className="w-14 h-14 rounded-2xl bg-primary text-primary-content font-bold text-xl flex items-center justify-center shadow-sm shrink-0">
                                 {getInitials(selectedClient.names, selectedClient.lastnames)}
                             </div>
@@ -454,7 +526,14 @@ export default function ClientsTable() {
                         </div>
 
                         {/* PIE DEL MODAL */}
-                        <div className="flex justify-end pt-3 border-t border-base-200">
+                        <div className="flex justify-center pt-3 border-t border-base-200 gap-3">
+                            <button
+                                type="button"
+                                onClick={() => { console.log("Ver notas") }}
+                                className="btn btn-primary h-11 px-6 rounded-xl text-sm font-semibold shadow-sm active:scale-95"
+                            >
+                                Ver servicios
+                            </button>
                             <button
                                 type="button"
                                 onClick={() => detailModalRef.current?.close()}
@@ -466,6 +545,218 @@ export default function ClientsTable() {
                     </div>
                 )}
             </Modal>
+
+            {/* MODAL PARA EDITAR CLIENTE */}
+            <Modal
+                ref={editModalRef}
+                modalTitle="Editar Cliente"
+                modalSubtitle="Modifica la información del cliente"
+                className="max-w-xl"
+            >
+                <form onSubmit={handleSubmitEdit(onSubmitEdit)} className="space-y-5 pt-2">
+                    {updateClientMutation.isError && (
+                        <div className="alert alert-error text-sm py-3 rounded-2xl flex items-start gap-2">
+                            <AlertCircle size={20} className="shrink-0 mt-0.5" />
+                            <div>
+                                <span className="font-semibold block">Error al actualizar cliente</span>
+                                <span className="text-xs opacity-90">No se pudieron guardar los cambios. Inténtalo de nuevo.</span>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="form-control">
+                            <label htmlFor="edit_names" className="label py-1.5">
+                                <span className="label-text text-base font-semibold text-base-content/90">
+                                    Nombres <span className="text-error">*</span>
+                                </span>
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    id="edit_names"
+                                    placeholder="Ej. María Elena"
+                                    {...registerEdit("names")}
+                                    className={`input input-bordered w-full pl-11 h-12 text-base rounded-xl border-base-200 focus:border-primary focus:outline-none transition-all ${editErrors.names ? 'input-error border-error' : ''}`}
+                                />
+                                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40" size={20} />
+                            </div>
+                            {editErrors.names && (
+                                <span className="text-error text-xs font-medium mt-1 flex items-center gap-1">
+                                    <AlertCircle size={14} />
+                                    {editErrors.names.message}
+                                </span>
+                            )}
+                        </div>
+
+                        <div className="form-control">
+                            <label htmlFor="edit_lastnames" className="label py-1.5">
+                                <span className="label-text text-base font-semibold text-base-content/90">
+                                    Apellidos <span className="text-error">*</span>
+                                </span>
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    id="edit_lastnames"
+                                    placeholder="Ej. Rodríguez López"
+                                    {...registerEdit("lastnames")}
+                                    className={`input input-bordered w-full pl-11 h-12 text-base rounded-xl border-base-200 focus:border-primary focus:outline-none transition-all ${editErrors.lastnames ? 'input-error border-error' : ''}`}
+                                />
+                                <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40" size={20} />
+                            </div>
+                            {editErrors.lastnames && (
+                                <span className="text-error text-xs font-medium mt-1 flex items-center gap-1">
+                                    <AlertCircle size={14} />
+                                    {editErrors.lastnames.message}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="form-control">
+                        <label htmlFor="edit_phone" className="label py-1.5">
+                            <span className="label-text text-base font-semibold text-base-content/90">
+                                Teléfono / WhatsApp <span className="text-error">*</span>
+                            </span>
+                        </label>
+                        <div className="relative">
+                            <input
+                                type="tel"
+                                id="edit_phone"
+                                placeholder="Ej. 8888-8888"
+                                {...registerEdit("phone")}
+                                className={`input input-bordered w-full pl-11 h-12 text-base rounded-xl border-base-200 focus:border-primary focus:outline-none transition-all ${editErrors.phone ? 'input-error border-error' : ''}`}
+                            />
+                            <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40" size={20} />
+                        </div>
+                        {editErrors.phone && (
+                            <span className="text-error text-xs font-medium mt-1 flex items-center gap-1">
+                                <AlertCircle size={14} />
+                                {editErrors.phone.message}
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="form-control">
+                        <label htmlFor="edit_email" className="label py-1.5">
+                            <span className="label-text text-base font-semibold text-base-content/90">
+                                Correo Electrónico <span className="text-xs font-normal text-base-content/60">(Opcional)</span>
+                            </span>
+                        </label>
+                        <div className="relative">
+                            <input
+                                type="email"
+                                id="edit_email"
+                                placeholder="Ej. maria@ejemplo.com"
+                                {...registerEdit("email")}
+                                className={`input input-bordered w-full pl-11 h-12 text-base rounded-xl border-base-200 focus:border-primary focus:outline-none transition-all ${editErrors.email ? 'input-error border-error' : ''}`}
+                            />
+                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40" size={20} />
+                        </div>
+                        {editErrors.email && (
+                            <span className="text-error text-xs font-medium mt-1 flex items-center gap-1">
+                                <AlertCircle size={14} />
+                                {editErrors.email.message}
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="flex flex-col-reverse sm:flex-row justify-end items-center gap-3 pt-4 border-t border-base-200">
+                        <button
+                            type="button"
+                            onClick={() => editModalRef.current?.close()}
+                            className="btn btn-ghost h-12 rounded-xl text-base w-full sm:w-auto"
+                            disabled={updateClientMutation.isPending}
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            className="btn btn-primary h-12 rounded-xl text-base font-semibold w-full sm:w-auto px-8 active:scale-95 shadow-md flex items-center justify-center gap-2"
+                            disabled={updateClientMutation.isPending}
+                        >
+                            {updateClientMutation.isPending ? (
+                                <>
+                                    <span className="loading loading-spinner loading-md"></span>
+                                    <span>Guardando...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Save size={20} />
+                                    <span>Guardar Cambios</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* MODAL PARA ELIMINAR CLIENTE */}
+            <Modal
+                ref={deleteModalRef}
+                modalTitle="Eliminar Cliente"
+                modalSubtitle="Confirmación de desactivación"
+                className="max-w-md"
+            >
+                {deletingClient && (
+                    <div className="space-y-5 pt-2">
+                        {deleteClientMutation.isError && (
+                            <div className="alert alert-error text-sm py-3 rounded-2xl flex items-start gap-2">
+                                <AlertCircle size={20} className="shrink-0 mt-0.5" />
+                                <div>
+                                    <span className="font-semibold block">Error al eliminar cliente</span>
+                                    <span className="text-xs opacity-90">Ocurrió un error al intentar eliminar.</span>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="p-4 rounded-2xl bg-error/10 border border-error/20 flex items-start gap-3">
+                            <div className="p-2 bg-error/20 rounded-xl text-error shrink-0">
+                                <Trash2 className="w-6 h-6" />
+                            </div>
+                            <div className="space-y-1">
+                                <h4 className="font-bold text-base text-base-content">
+                                    ¿Deseas eliminar a {deletingClient.full_name || `${deletingClient.names || ''} ${deletingClient.lastnames || ''}`}?
+                                </h4>
+                                <p className="text-xs text-base-content/70">
+                                    Esta acción marcará al cliente como inactivo en el sistema. Ya no aparecerá en las búsquedas activas.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col-reverse sm:flex-row justify-end items-center gap-3 pt-4 border-t border-base-200">
+                            <button
+                                type="button"
+                                onClick={() => deleteModalRef.current?.close()}
+                                className="btn btn-ghost h-11 rounded-xl text-sm w-full sm:w-auto"
+                                disabled={deleteClientMutation.isPending}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleConfirmDelete}
+                                className="btn btn-error h-11 rounded-xl text-sm font-semibold w-full sm:w-auto px-6 active:scale-95 text-white flex items-center justify-center gap-2"
+                                disabled={deleteClientMutation.isPending}
+                            >
+                                {deleteClientMutation.isPending ? (
+                                    <>
+                                        <span className="loading loading-spinner loading-sm"></span>
+                                        <span>Eliminando...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Trash2 className="w-4 h-4" />
+                                        <span>Sí, eliminar cliente</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 }
+
