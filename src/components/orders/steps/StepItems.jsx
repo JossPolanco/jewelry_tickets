@@ -20,7 +20,8 @@ export default function StepItems() {
         description: '',
         initial_weight_grams: '',
         service_requested: '',
-        material_details: ''
+        material_details: '',
+        unit_price: ''
     };
 
     const [formData, setFormData] = useState(initialFormState);
@@ -43,7 +44,8 @@ export default function StepItems() {
             description: itemToEdit.description || '',
             initial_weight_grams: itemToEdit.initial_weight_grams !== undefined ? String(itemToEdit.initial_weight_grams) : '',
             service_requested: itemToEdit.service_requested || '',
-            material_details: itemToEdit.material_details || ''
+            material_details: itemToEdit.material_details || '',
+            unit_price: itemToEdit.unit_price !== undefined ? String(itemToEdit.unit_price) : ''
         });
         setLocalErrors({});
         modalRef.current?.open();
@@ -71,6 +73,11 @@ export default function StepItems() {
         }
         if (!formData.service_requested) errorsObj.service_requested = 'Selecciona el tipo de servicio';
 
+        const parsedPrice = parseFloat(formData.unit_price);
+        if (formData.unit_price === '' || isNaN(parsedPrice) || parsedPrice < 0) {
+            errorsObj.unit_price = 'Ingresa un precio unitario válido (0 o mayor)';
+        }
+
         if (Object.keys(errorsObj).length > 0) {
             setLocalErrors(errorsObj);
             return;
@@ -82,6 +89,7 @@ export default function StepItems() {
             initial_weight_grams: parsedWeight,
             service_requested: formData.service_requested,
             material_details: formData.material_details?.trim() || 'Sin observaciones',
+            unit_price: parsedPrice,
             photo_ids: []
         };
 
@@ -349,6 +357,29 @@ export default function StepItems() {
                             ></textarea>
                             <MessageSquare className="w-4 h-4 absolute left-3 top-3 text-base-content/40" />
                         </div>
+                    </div>
+
+                    {/* PRECIO UNITARIO */}
+                    <div className="form-control w-full">
+                        <label className="label py-1">
+                            <span className="label-text text-xs font-semibold text-base-content">
+                                Precio Unitario Estimado
+                            </span>
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-3.5 text-base-content/40 font-medium">$</span>
+                            <input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                className="input input-bordered w-full pl-8 pr-3 text-xs sm:text-sm font-medium rounded-xl border-base-300 focus:border-primary"
+                                value={formData.unit_price}
+                                onChange={(e) => setFormData({ ...formData, unit_price: e.target.value })}
+                            />
+                        </div>
+                        {localErrors.unit_price && (
+                            <span className="text-xs text-error mt-0.5 font-medium">{localErrors.unit_price}</span>
+                        )}
                     </div>
 
                     {/* ACCIONES DEL MODAL */}

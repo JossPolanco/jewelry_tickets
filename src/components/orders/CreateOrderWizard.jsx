@@ -16,6 +16,7 @@ const itemSchema = z.object({
     initial_weight_grams: z.coerce.number({ invalid_type_error: "El peso debe ser un número válido" }).min(0, "Peso inicial en gramos requerido"),
     material_details: z.string().optional().default(""),
     service_requested: z.string().min(1, "Servicio solicitado requerido"),
+    unit_price: z.coerce.number({ invalid_type_error: "El precio debe ser un número válido" }).optional().default(0.00),
     photo_ids: z.array(z.string()).optional().default([]),
 })
 

@@ -130,6 +130,7 @@ create table public.tbl_order_items (
   initial_weight_grams numeric(8, 3) not null,
   material_details text,
   service_requested text not null,
+  unit_price numeric(10, 2) not null default 0.00,
   
   -- Arreglo de UUIDs pertenecientes a la tabla tbl_image_metadata
   photo_ids uuid[] default '{}'::uuid[],
