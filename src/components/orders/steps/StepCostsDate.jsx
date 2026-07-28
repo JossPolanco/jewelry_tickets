@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { DollarSign, Calendar, CreditCard, RefreshCw } from 'lucide-react';
 import { useFormContext, Controller } from 'react-hook-form';
 import { DayPicker } from "react-day-picker";
+import "react-day-picker/style.css";
 import { Modal } from "@/components/";
 import { es } from 'date-fns/locale';
 
@@ -180,6 +181,7 @@ export default function StepCostsDate() {
                         return (
                             <div className="flex flex-col items-center justify-center p-1.5 overflow-hidden max-w-full">
                                 <DayPicker
+                                    className="react-day-picker"
                                     mode="single"
                                     selected={selectedDateObject}
                                     onSelect={(date) => {

@@ -4780,25 +4780,25 @@
     }
   }
 }
-.rdp-root {
+.rdp-root, .react-day-picker {
   --rdp-accent-color: var(--color-primary) !important;
   --rdp-accent-background-color: var(--color-primary) !important;
 }
-.rdp-day_selected, .rdp-day_selected:hover, .rdp-day_selected:focus, .rdp-day_selected:active {
+.rdp-day_selected, .rdp-selected, .rdp-selected .rdp-day_button, .rdp-selected:hover, .rdp-selected:focus, .rdp-selected:active {
   background-color: var(--color-primary) !important;
   color: var(--color-primary-content) !important;
 }
-.rdp-day_today:not(.rdp-day_selected) {
+.rdp-day_today:not(.rdp-day_selected), .rdp-today:not(.rdp-selected) .rdp-day_button {
   color: var(--color-primary) !important;
   font-weight: bold;
 }
 .rdp-chevron {
   fill: var(--color-base-content) !important;
 }
-.rdp-nav_button {
+.rdp-nav_button, .rdp-button_next, .rdp-button_previous {
   color: var(--color-base-content) !important;
 }
-.rdp-nav_button:hover {
+.rdp-nav_button:hover, .rdp-button_next:hover, .rdp-button_previous:hover {
   background-color: var(--color-base-200) !important;
 }
 .scrollbar-thin::-webkit-scrollbar {
