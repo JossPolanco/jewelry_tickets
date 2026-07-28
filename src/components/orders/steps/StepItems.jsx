@@ -1,16 +1,24 @@
-import { Package, Wrench, MessageSquare, Plus, Trash2, Edit3, Scale, Tag, AlertCircle, Weight, Hammer } from 'lucide-react';
+import { Package, Wrench, MessageSquare, Plus, Trash2, Edit3, Scale, Tag, AlertCircle, Weight, Hammer, DollarSign } from 'lucide-react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ITEM_TYPES, SERVICE_TYPES } from '@/utils'
 import { Memo } from 'reicon-react';
 import Modal from '@/components/Modal';
 
 export default function StepItems() {
-    const { control, formState: { errors }, clearErrors } = useFormContext();
+    const { control, formState: { errors }, clearErrors, setValue } = useFormContext();
     const { fields, append, remove, update } = useFieldArray({
         control,
         name: "items"
     });
+
+    const totalItemsPrice = fields.reduce((sum, item) => sum + (parseFloat(item.unit_price) || 0), 0);
+
+    useEffect(() => {
+        if (setValue) {
+            setValue('total_estimated_cost', totalItemsPrice, { shouldValidate: true });
+        }
+    }, [totalItemsPrice, setValue]);
 
     const modalRef = useRef(null);
     const [editingIndex, setEditingIndex] = useState(null);
@@ -160,16 +168,13 @@ export default function StepItems() {
                 </div>
             ) : (
                 /* LISTA DE PIEZAS ULTRA COMPACTA */
-                <div className="grid grid-cols-1 gap-2">
+                <div className="grid grid-cols-1 gap-2 max-h-72 sm:max-h-80 overflow-y-auto pr-1">
                     {fields.map((item, index) => {
                         const typeDisplay = ITEM_TYPES[item.item_type] || item.item_type;
                         const serviceDisplay = SERVICE_TYPES[item.service_requested] || item.service_requested;
 
                         return (
-                            <div
-                                key={item.id}
-                                className="bg-base-100 border border-base-200 hover:border-primary/40 rounded-xl p-2.5 sm:p-3 shadow-2xs transition-all space-y-1 animate-fade-in"
-                            >
+                            <div key={item.id} className="bg-base-100 border border-base-200 hover:border-primary/40 rounded-xl p-2.5 sm:p-3 shadow-2xs transition-all space-y-1 animate-fade-in">
                                 {/* FILA 1: BADGE TIPO DE JOYA + ACCIONES */}
                                 <div className="flex items-center justify-between gap-2">
                                     <div className="flex items-center gap-1.5">
@@ -217,6 +222,11 @@ export default function StepItems() {
                                         <Weight className="w-3.5 h-3.5" />
                                         {item.initial_weight_grams} g
                                     </span>
+                                    <span className="text-base-content/30">•</span>
+                                    <span className="flex flex-row gap-1 font-bold text-primary">
+                                        <DollarSign className="w-3.5 h-3.5 shrink-0" />
+                                        {(parseFloat(item.unit_price) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </span>
                                     {item.material_details && item.material_details !== 'Sin observaciones' && (
                                         <>
                                             <span className="text-base-content/30">•</span>
@@ -230,6 +240,28 @@ export default function StepItems() {
                             </div>
                         );
                     })}
+                </div>
+            )}
+
+            {/* TARJETA RESUMEN CON LA SUMA TOTAL DE PRECIOS */}
+            {fields.length > 0 && (
+                <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center justify-between shadow-2xs animate-fade-in">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-primary text-primary-content flex items-center justify-center font-bold shadow-xs">
+                            <DollarSign className="w-4 h-4" />
+                        </div>
+                        <div>
+                            <span className="text-xs font-bold text-base-content block">
+                                Suma Total Estimada de Piezas
+                            </span>
+                            <span className="text-[11px] text-base-content/60">
+                                Calculado de {fields.length} {fields.length === 1 ? 'pieza registrada' : 'piezas registradas'}
+                            </span>
+                        </div>
+                    </div>
+                    <span className="text-base sm:text-lg font-extrabold text-primary">
+                        ${totalItemsPrice.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
                 </div>
             )}
 

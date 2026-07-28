@@ -1,8 +1,11 @@
 import React from 'react';
 import { PenTool, FileText } from 'lucide-react';
 import SignatureInput from '@/components/SignatureInput';
+import { useFormContext, Controller } from 'react-hook-form';
 
 export default function StepSignature() {
+    const { register, control } = useFormContext();
+
     return (
         <div className="space-y-4 py-2 animate-fade-in">
             <div className="border-b border-base-200 pb-2">
@@ -21,9 +24,9 @@ export default function StepSignature() {
                 </label>
                 <div className="relative">
                     <textarea
+                        {...register("notes_general")}
                         placeholder="Términos particulares, instrucciones especiales de entrega..."
                         className="textarea textarea-bordered w-full pl-10 pt-3 min-h-17.5"
-                        readOnly
                     ></textarea>
                     <FileText className="w-4 h-4 absolute left-3 top-3.5 text-base-content/40" />
                 </div>
@@ -34,9 +37,19 @@ export default function StepSignature() {
                     <span className="label-text font-medium">Firma Digital del Cliente</span>
                 </label>
                 <div className="border border-base-300 rounded-2xl p-3 bg-base-200/30">
-                    <SignatureInput />
+                    <Controller
+                        control={control}
+                        name="signature_data"
+                        render={({ field }) => (
+                            <SignatureInput
+                                value={field.value}
+                                onChange={field.onChange}
+                            />
+                        )}
+                    />
                 </div>
             </div>
         </div>
     );
 }
+

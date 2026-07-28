@@ -21,12 +21,12 @@ const itemSchema = z.object({
 })
 
 const orderSchema = z.object({
-    organization_id: z.string().min(1, "ID de organización requerido"),
+    organization_id: z.string().optional().default(""),
     customer_id: z.string().min(1, "ID de cliente requerido"),
-    folio: z.string().min(1, "Folio requerido"),
+    folio: z.string().optional().default(""),
     status: z.string().min(1, "Estado requerido"),
-    total_estimated_cost: z.number().min(1, "Costo estimado requerido"),
-    advance_payment: z.number().optional().default(0.00),
+    total_estimated_cost: z.coerce.number({ invalid_type_error: "Ingresa un costo estimado válido" }).min(0, "El costo estimado debe ser 0 o mayor"),
+    advance_payment: z.coerce.number({ invalid_type_error: "Ingresa un anticipo válido" }).optional().default(0.00),
     signature_data: z.any().nullable().optional(),
     notes_general: z.string().optional().default("Sin observaciones"),
     promised_date: z.string().min(1, "Fecha prometida requerida"),
@@ -67,6 +67,7 @@ export default function CreateOrderWizard() {
 
         if (currentStep === 1) fieldsToValidate = ['customer_id'];
         if (currentStep === 2) fieldsToValidate = ['items'];
+        if (currentStep === 3) fieldsToValidate = ['total_estimated_cost', 'promised_date'];
 
         const isStepValid = await methods.trigger(fieldsToValidate);
 
@@ -82,8 +83,11 @@ export default function CreateOrderWizard() {
     };
 
     const onSubmit = (data) => {
-        console.log("Datos de la orden a guardar:", data);
-        // Aquí llamarás a tu servicio de Supabase para guardar la orden e ítems
+        console.log("📋 Objeto Data Completo:", data);
+    };
+
+    const onError = (errors) => {
+        console.warn("⚠️ Error de validación al intentar guardar la orden:", errors);
     };
 
     const renderStepContent = () => {
@@ -160,7 +164,7 @@ export default function CreateOrderWizard() {
                         ) : (
                             <button
                                 type="button"
-                                onClick={methods.handleSubmit(onSubmit)}
+                                onClick={methods.handleSubmit(onSubmit, onError)}
                                 className="btn btn-success btn-sm sm:btn-md gap-1 text-white"
                             >
                                 <Save className="w-4 h-4" />

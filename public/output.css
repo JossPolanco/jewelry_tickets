@@ -2866,14 +2866,14 @@
   .max-w-7xl {
     max-width: var(--container-7xl);
   }
+  .max-w-40 {
+    max-width: calc(var(--spacing) * 40);
+  }
   .max-w-45 {
     max-width: calc(var(--spacing) * 45);
   }
   .max-w-70 {
     max-width: calc(var(--spacing) * 70);
-  }
-  .max-w-\[160px\] {
-    max-width: 160px;
   }
   .max-w-full {
     max-width: 100%;
@@ -3641,6 +3641,12 @@
   .pt-6 {
     padding-top: calc(var(--spacing) * 6);
   }
+  .pr-1 {
+    padding-right: var(--spacing);
+  }
+  .pr-3 {
+    padding-right: calc(var(--spacing) * 3);
+  }
   .pr-5 {
     padding-right: calc(var(--spacing) * 5);
   }
@@ -3676,6 +3682,9 @@
   }
   .pl-5 {
     padding-left: calc(var(--spacing) * 5);
+  }
+  .pl-8 {
+    padding-left: calc(var(--spacing) * 8);
   }
   .pl-9 {
     padding-left: calc(var(--spacing) * 9);
@@ -3799,9 +3808,6 @@
   .tracking-wider {
     --tw-tracking: var(--tracking-wider);
     letter-spacing: var(--tracking-wider);
-  }
-  .break-words {
-    overflow-wrap: break-word;
   }
   @layer daisyui.l1.l2 {
     .alert-error {
@@ -4390,6 +4396,9 @@
     .hover\:text-white:hover {
       color: var(--color-white);
     }
+    .hover\:underline:hover {
+      text-decoration-line: underline;
+    }
     .hover\:shadow-md:hover {
       --tw-shadow: 0 4px 6px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 2px 4px -2px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
       box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
@@ -4527,6 +4536,9 @@
     .sm\:h-13 {
       height: calc(var(--spacing) * 13);
     }
+    .sm\:max-h-80 {
+      max-height: calc(var(--spacing) * 80);
+    }
     .sm\:w-auto {
       width: auto;
     }
@@ -4613,6 +4625,9 @@
     }
     .md\:max-w-md {
       max-width: var(--container-md);
+    }
+    .md\:max-w-sm {
+      max-width: var(--container-sm);
     }
     .md\:grid-cols-2 {
       grid-template-columns: repeat(2, minmax(0, 1fr));
