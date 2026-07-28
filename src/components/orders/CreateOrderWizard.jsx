@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Package, DollarSign, PenTool, ChevronLeft, ChevronRight, Save, Check } from 'lucide-react';
 import StepClient from './steps/StepClient';
 import StepItems from './steps/StepItems';
@@ -42,7 +42,7 @@ const STEPS = [
 
 export default function CreateOrderWizard() {
     const [currentStep, setCurrentStep] = useState(1);
-    const { organization } = useUser()
+    const { organization } = useUser();
 
     const methods = useForm({
         resolver: zodResolver(orderSchema),
@@ -58,9 +58,15 @@ export default function CreateOrderWizard() {
             promised_date: "",
             items: [],
         }
-    })
+    });
 
-    const { handleSubmit, trigger } = methods;
+    const { handleSubmit, trigger, setValue } = methods;
+
+    useEffect(() => {
+        if (organization?.organization_id) {
+            setValue('organization_id', organization.organization_id);
+        }
+    }, [organization, setValue]);
 
     const handleNext = async () => {
         let fieldsToValidate = [];

@@ -222,11 +222,26 @@ create policy "CRUD Autenticados en tbl_order_items" on public.tbl_order_items f
 create policy "CRUD Autenticados en tbl_payments" on public.tbl_payments for all to authenticated using (true) with check (true);
 create policy "CRUD Autenticados en tbl_organization_members" on public.tbl_organization_members for all to authenticated using (true) with check (true);
 
--- Politica para jewelry-photos
-CREATE POLICY "Permitir subida a usuarios autenticados en jewelry-photos"
-ON storage.objects FOR INSERT TO authenticated
-WITH CHECK (bucket_id = 'jewelry-photos');
+-- ==========================================
+-- 10. POLÍTICAS DE STORAGE PARA BUCKET 'photos'
+-- ==========================================
+-- Políticas de RLS en storage.objects para el bucket 'photos' (y auxiliares 'avatars', 'drawings')
+CREATE POLICY "Permitir lectura en storage objects photos"
+ON storage.objects FOR SELECT
+TO authenticated, anon
+USING (bucket_id IN ('photos', 'avatars', 'drawings'));
 
-CREATE POLICY "Permitir lectura publica en jewelry-photos"
-ON storage.objects FOR SELECT TO public
-USING (bucket_id = 'jewelry-photos');
+CREATE POLICY "Permitir subida en storage objects photos"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id IN ('photos', 'avatars', 'drawings'));
+
+CREATE POLICY "Permitir actualización en storage objects photos"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING (bucket_id IN ('photos', 'avatars', 'drawings'));
+
+CREATE POLICY "Permitir eliminación en storage objects photos"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (bucket_id IN ('photos', 'avatars', 'drawings'));

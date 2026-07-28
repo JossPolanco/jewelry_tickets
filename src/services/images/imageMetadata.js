@@ -1,7 +1,7 @@
 import { supabaseClient } from "../../utils/supabase";
 
 // CONSTANTE DE LA TABLA
-const TABLE = "image_metadata";
+const TABLE = "tbl_image_metadata";
 
 // FUNCION PARA GUARDAR LA IMAGEN EN LA BASE DE DATOS
 export const saveImageMetadata = async ({ uploadedBy, bucket, gallery = "default", storagePath, originalName, fileSize, width, height, mimeType = "image/webp", }) => {
