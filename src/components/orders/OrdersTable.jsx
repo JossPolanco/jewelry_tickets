@@ -35,7 +35,7 @@ export default function OrdersTable() {
     const handlePressStart = (order) => {
         if (timerRef.current) clearTimeout(timerRef.current);
         timerRef.current = setTimeout(() => {
-            navigate(`/order-detail/${order.id}`);
+            navigate(`/service-orders/detail/${order.id}`);
             timerRef.current = null;
         }, 450);
     };

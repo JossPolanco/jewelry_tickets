@@ -10,3 +10,4 @@ export { default as Clients } from "./clients/Clients";
 
 // ORDERS PAGES
 export { default as Orders } from "./orders/ServiceOrders";
+export { default as OrderDetail } from "./orders/OrderDetail";

@@ -131,11 +131,64 @@ export async function getOrderDetail(id) {
     return finalData
 }
 
-async function getOrderItems(id) {
+export async function updateOrder(id, orderData) {
+    const { data, error } = await supabaseClient
+        .from("tbl_service_orders")
+        .update(orderData)
+        .eq("id", id)
+        .select("*")
+        .single();
+
+    if (error) {
+        throw error;
+    }
+    return data;
+}
+
+export async function getOrderItems(id) {
     const { data, error } = await supabaseClient
         .from("tbl_order_items")
         .select("*", { count: "exact" })
         .eq("service_order_id", id);
+
+    if (error) {
+        throw error;
+    }
+    return data;
+}
+
+export async function createOrderItem(itemData) {
+    const { data, error } = await supabaseClient
+        .from("tbl_order_items")
+        .insert(itemData)
+        .select("*")
+        .single();
+
+    if (error) {
+        throw error;
+    }
+    return data;
+}
+
+export async function updateOrderItem(id, itemData) {
+    const { data, error } = await supabaseClient
+        .from("tbl_order_items")
+        .update(itemData)
+        .eq("id", id)
+        .select("*")
+        .single();
+
+    if (error) {
+        throw error;
+    }
+    return data;
+}
+
+export async function deleteOrderItem(id) {
+    const { data, error } = await supabaseClient
+        .from("tbl_order_items")
+        .delete()
+        .eq("id", id);
 
     if (error) {
         throw error;

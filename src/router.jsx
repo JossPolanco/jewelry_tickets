@@ -17,6 +17,7 @@ const Clients = lazy(() => import("./pages/clients/Clients"));
 
 // ORDERS PAGES
 const Orders = lazy(() => import("./pages/orders/ServiceOrders"));
+const OrderDetail = lazy(() => import("./pages/orders/OrderDetail"));
 
 const PageLoader = () => (
     <div className="flex items-center justify-center min-h-[60vh]">
@@ -107,6 +108,14 @@ export const router = createBrowserRouter([
                 element: (
                     <Layout>
                         <LazyPage><Orders /></LazyPage>
+                    </Layout>
+                ),
+            },
+            {
+                path: "/service-orders/detail/:id",
+                element: (
+                    <Layout>
+                        <LazyPage><OrderDetail /></LazyPage>
                     </Layout>
                 ),
             },
