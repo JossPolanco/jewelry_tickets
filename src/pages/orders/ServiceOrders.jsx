@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useUser } from '@/utils/context/UserContext';
 import React, { useRef, useState } from 'react';
-import { Modal, FabAdd, CreateOrderWizard, Toast } from '@/components';
+import { Modal, FabAdd, CreateOrderWizard, Toast, OrdersTable } from '@/components';
 import { useForm } from 'react-hook-form';
 import z from 'zod';
 
@@ -36,6 +36,8 @@ export default function ServiceOrders() {
                     type={toastState.type}
                 />
             )}
+
+            <OrdersTable />
 
             <FabAdd onClick={openOrderModal} />
 

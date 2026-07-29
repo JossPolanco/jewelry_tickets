@@ -13,6 +13,7 @@ export { default as UploadPanel } from './images/UploadPanel'
 export { default as ClientsTable } from './clients/ClientsTable'
 
 // ORDERS COMPONENTS
+export { default as OrdersTable } from './orders/OrdersTable'
 export { default as CreateOrderWizard } from './orders/CreateOrderWizard'
 export { default as StepClient } from './orders/steps/StepClient'
 export { default as StepItems } from './orders/steps/StepItems'

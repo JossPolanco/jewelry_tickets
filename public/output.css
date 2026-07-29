@@ -2093,15 +2093,15 @@
     inset-inline: 0px;
   }
   @layer daisyui.l1.l2 {
-    .dropdown-left {
-      --anchor-h: left;
+    .dropdown-right {
+      --anchor-h: right;
       --anchor-v: span-bottom;
     }
-    .dropdown-left .dropdown-content {
-      inset-inline-end: 100%;
+    .dropdown-right .dropdown-content {
+      inset-inline-start: 100%;
       top: 0;
       bottom: auto;
-      transform-origin: 100%;
+      transform-origin: 0;
     }
     .dropdown-end {
       --anchor-h: span-left;
@@ -2864,6 +2864,9 @@
   .w-14 {
     width: calc(var(--spacing) * 14);
   }
+  .w-16 {
+    width: calc(var(--spacing) * 16);
+  }
   .w-36 {
     width: calc(var(--spacing) * 36);
   }
@@ -3259,6 +3262,12 @@
       border-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
     }
   }
+  .border-base-content\/20 {
+    border-color: var(--color-base-content);
+    @supports (color: color-mix(in lab, red, red)) {
+      border-color: color-mix(in oklab, var(--color-base-content) 20%, transparent);
+    }
+  }
   .border-error {
     border-color: var(--color-error);
   }
@@ -3276,6 +3285,12 @@
   }
   .border-gray-300 {
     border-color: var(--color-gray-300);
+  }
+  .border-info\/20 {
+    border-color: var(--color-info);
+    @supports (color: color-mix(in lab, red, red)) {
+      border-color: color-mix(in oklab, var(--color-info) 20%, transparent);
+    }
   }
   .border-primary {
     border-color: var(--color-primary);
@@ -3307,10 +3322,22 @@
       border-color: color-mix(in oklab, var(--color-secondary) 20%, transparent);
     }
   }
+  .border-success\/20 {
+    border-color: var(--color-success);
+    @supports (color: color-mix(in lab, red, red)) {
+      border-color: color-mix(in oklab, var(--color-success) 20%, transparent);
+    }
+  }
   .border-success\/30 {
     border-color: var(--color-success);
     @supports (color: color-mix(in lab, red, red)) {
       border-color: color-mix(in oklab, var(--color-success) 30%, transparent);
+    }
+  }
+  .border-warning\/20 {
+    border-color: var(--color-warning);
+    @supports (color: color-mix(in lab, red, red)) {
+      border-color: color-mix(in oklab, var(--color-warning) 20%, transparent);
     }
   }
   .border-white\/10 {
@@ -3401,6 +3428,12 @@
   .bg-base-300 {
     background-color: var(--color-base-300);
   }
+  .bg-base-content\/10 {
+    background-color: var(--color-base-content);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+    }
+  }
   .bg-black\/40 {
     background-color: color-mix(in srgb, #000 40%, transparent);
     @supports (color: color-mix(in lab, red, red)) {
@@ -3468,6 +3501,12 @@
     background-color: var(--color-secondary);
     @supports (color: color-mix(in lab, red, red)) {
       background-color: color-mix(in oklab, var(--color-secondary) 10%, transparent);
+    }
+  }
+  .bg-success\/10 {
+    background-color: var(--color-success);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-success) 10%, transparent);
     }
   }
   .bg-success\/15 {
@@ -3740,9 +3779,6 @@
   }
   .text-left {
     text-align: left;
-  }
-  .text-right {
-    text-align: right;
   }
   .font-mono {
     font-family: var(--font-mono);
@@ -4294,6 +4330,10 @@
     .badge-info {
       --badge-color: var(--color-info);
       --badge-fg: var(--color-info-content);
+    }
+    .badge-neutral {
+      --badge-color: var(--color-neutral);
+      --badge-fg: var(--color-neutral-content);
     }
     .badge-primary {
       --badge-color: var(--color-primary);

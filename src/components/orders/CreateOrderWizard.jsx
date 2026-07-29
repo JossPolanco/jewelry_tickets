@@ -95,6 +95,7 @@ export default function CreateOrderWizard({ onClose, showToast }) {
             if (showToast) {
                 showToast("Orden guardada exitosamente", "success");
             }
+            queryClient.invalidateQueries(['ordersPreview']),
             reset();
             setCurrentStep(1);
             if (onClose) {
