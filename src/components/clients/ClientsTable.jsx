@@ -1,6 +1,6 @@
 import {
     Search, ChevronLeft, ChevronRight, MoreVertical, Pencil, Trash2, Phone, Mail, Calendar, X, Users, RefreshCw,
-    User, Info, ExternalLink, BadgeCheck, AlertCircle, Save
+    User, Info, ExternalLink, BadgeCheck, AlertCircle, Save, Wrench
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getClients, updateClient, deleteClient } from '@/services/clients';
@@ -265,11 +265,11 @@ export default function ClientsTable() {
                     <table className="table table-zebra w-full text-sm">
                         <thead>
                             <tr className="border-b border-base-200 bg-base-200/40 text-base-content/70">
-                                <th className="py-3.5 pl-5 font-semibold">Cliente</th>
+                                <th className="py-3.5 pl-5 text-left font-semibold w-16"><Wrench className="w-4 h-4 text-base-content/70" /></th>
+                                <th className="py-3.5 font-semibold">Cliente</th>
                                 <th className="py-3.5 font-semibold">Contacto</th>
                                 <th className="py-3.5 font-semibold">Correo</th>
-                                <th className="py-3.5 font-semibold">Registro</th>
-                                <th className="py-3.5 pr-5 text-right font-semibold">Acciones</th>
+                                <th className="py-3.5 pr-5 font-semibold">Registro</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-base-200">
@@ -287,54 +287,13 @@ export default function ClientsTable() {
                                         className="hover:bg-base-200/50 transition-colors cursor-pointer select-none touch-manipulation"
                                         title="Mantén presionado para ver los detalles del cliente"
                                     >
-                                        {/* Cliente / Nombre */}
-                                        <td className="py-3 pl-5">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0 border border-primary/20">
-                                                    {getInitials(client.names, client.lastnames)}
-                                                </div>
-                                                <div>
-                                                    <span className="font-semibold text-base-content block leading-tight">
-                                                        {fullName}
-                                                    </span>
-                                                    <span className="text-[11px] text-base-content/50 block mt-0.5">
-                                                        ID: {client.id ? client.id.substring(0, 8) : '—'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </td>
-
-                                        {/* Contacto / Teléfono */}
-                                        <td className="py-3">
-                                            <div className="flex items-center gap-1.5 text-base-content/80 font-medium">
-                                                <Phone className="w-3.5 h-3.5 text-base-content/40 shrink-0" />
-                                                <span>{client.phone || '—'}</span>
-                                            </div>
-                                        </td>
-
-                                        {/* Correo */}
-                                        <td className="py-3">
-                                            <div className="flex items-center gap-1.5 text-base-content/80">
-                                                <Mail className="w-3.5 h-3.5 text-base-content/40 shrink-0" />
-                                                <span className="truncate max-w-45">{client.email || '—'}</span>
-                                            </div>
-                                        </td>
-
-                                        {/* Fecha Registro */}
-                                        <td className="py-3 text-base-content/70">
-                                            <div className="flex items-center gap-1.5">
-                                                <Calendar className="w-3.5 h-3.5 text-base-content/40 shrink-0" />
-                                                <span>{formatDate(client.created_at)}</span>
-                                            </div>
-                                        </td>
-
                                         {/* Acciones / Panel 3 Puntos */}
                                         <td
-                                            className="py-3 pr-5 text-right"
+                                            className="py-3 pl-5 text-left"
                                             onMouseDown={(e) => e.stopPropagation()}
                                             onTouchStart={(e) => e.stopPropagation()}
                                         >
-                                            <div className="dropdown dropdown-left dropdown-end">
+                                            <div className="dropdown dropdown-right">
                                                 <div
                                                     tabIndex={0}
                                                     role="button"
@@ -374,6 +333,47 @@ export default function ClientsTable() {
                                                         </button>
                                                     </li>
                                                 </ul>
+                                            </div>
+                                        </td>
+
+                                        {/* Cliente / Nombre */}
+                                        <td className="py-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0 border border-primary/20">
+                                                    {getInitials(client.names, client.lastnames)}
+                                                </div>
+                                                <div>
+                                                    <span className="font-semibold text-base-content block leading-tight">
+                                                        {fullName}
+                                                    </span>
+                                                    <span className="text-[11px] text-base-content/50 block mt-0.5">
+                                                        ID: {client.id ? client.id.substring(0, 8) : '—'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        {/* Contacto / Teléfono */}
+                                        <td className="py-3">
+                                            <div className="flex items-center gap-1.5 text-base-content/80 font-medium">
+                                                <Phone className="w-3.5 h-3.5 text-base-content/40 shrink-0" />
+                                                <span>{client.phone || '—'}</span>
+                                            </div>
+                                        </td>
+
+                                        {/* Correo */}
+                                        <td className="py-3">
+                                            <div className="flex items-center gap-1.5 text-base-content/80">
+                                                <Mail className="w-3.5 h-3.5 text-base-content/40 shrink-0" />
+                                                <span className="truncate max-w-45">{client.email || '—'}</span>
+                                            </div>
+                                        </td>
+
+                                        {/* Fecha Registro */}
+                                        <td className="py-3 pr-5 text-base-content/70">
+                                            <div className="flex items-center gap-1.5">
+                                                <Calendar className="w-3.5 h-3.5 text-base-content/40 shrink-0" />
+                                                <span>{formatDate(client.created_at)}</span>
                                             </div>
                                         </td>
                                     </tr>
