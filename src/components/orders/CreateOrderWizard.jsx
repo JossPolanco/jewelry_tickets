@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { User, Package, DollarSign, PenTool, ChevronLeft, ChevronRight, Save, Check } from 'lucide-react';
-import StepClient from './steps/StepClient';
-import StepItems from './steps/StepItems';
-import StepCostsDate from './steps/StepCostsDate';
-import StepSignature from './steps/StepSignature';
-import { z } from 'zod';
+import { User, Package, DollarSign, PenTool, ChevronLeft, ChevronRight, Save } from 'lucide-react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { useUser } from '@/utils/context/UserContext';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
+import StepCostsDate from './steps/StepCostsDate';
+import StepSignature from './steps/StepSignature';
+import { createOrder } from '@/services/orders';
+import { useState, useEffect } from 'react';
+import StepClient from './steps/StepClient';
+import StepItems from './steps/StepItems';
+import { z } from 'zod';
 
 const itemSchema = z.object({
     service_order_id: z.string().optional(),
@@ -23,7 +25,6 @@ const itemSchema = z.object({
 const orderSchema = z.object({
     organization_id: z.string().optional().default(""),
     customer_id: z.string().min(1, "ID de cliente requerido"),
-    folio: z.string().optional().default(""),
     status: z.string().min(1, "Estado requerido"),
     total_estimated_cost: z.coerce.number({ invalid_type_error: "Ingresa un costo estimado válido" }).min(0, "El costo estimado debe ser 0 o mayor"),
     advance_payment: z.coerce.number({ invalid_type_error: "Ingresa un anticipo válido" }).optional().default(0.00),
@@ -40,7 +41,7 @@ const STEPS = [
     { id: 4, label: 'FIRMA', icon: PenTool },
 ];
 
-export default function CreateOrderWizard() {
+export default function CreateOrderWizard({ onClose, showToast }) {
     const [currentStep, setCurrentStep] = useState(1);
     const { organization } = useUser();
 
@@ -50,7 +51,7 @@ export default function CreateOrderWizard() {
             organization_id: organization?.organization_id || "",
             customer_id: "",
             folio: "",
-            status: "PENDIENTE",
+            status: "Pendiente",
             total_estimated_cost: 0.00,
             advance_payment: 0.00,
             signature_data: null,
@@ -60,7 +61,7 @@ export default function CreateOrderWizard() {
         }
     });
 
-    const { handleSubmit, trigger, setValue } = methods;
+    const { handleSubmit, trigger, setValue, reset } = methods;
 
     useEffect(() => {
         if (organization?.organization_id) {
@@ -88,12 +89,33 @@ export default function CreateOrderWizard() {
         }
     };
 
+    const saveOrderMutation = useMutation({
+        mutationFn: createOrder,
+        onSuccess: () => {
+            if (showToast) {
+                showToast("Orden guardada exitosamente", "success");
+            }
+            reset();
+            setCurrentStep(1);
+            if (onClose) {
+                onClose();
+            }
+        },
+        onError: (error) => {
+            if (showToast) {
+                showToast(error?.response?.data?.message || error?.message || "Error al guardar la orden", "error");
+            }
+        },
+    });
+
     const onSubmit = (data) => {
-        console.log("📋 Objeto Data Completo:", data);
+        saveOrderMutation.mutate(data);
     };
 
     const onError = (errors) => {
-        console.warn("⚠️ Error de validación al intentar guardar la orden:", errors);
+        if (showToast) {
+            showToast("Por favor completa los campos requeridos correctamente", "error");
+        }
     };
 
     const renderStepContent = () => {

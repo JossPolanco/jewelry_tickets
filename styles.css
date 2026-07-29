@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "./src/**/*.{js,jsx,ts,tsx}";
 
 @plugin "daisyui" {
     themes: dark --prefersdark, Aurora --default;

@@ -11,6 +11,7 @@ export default function StepClient() {
     const register = formContext?.register;
     const setValue = formContext?.setValue;
     const watch = formContext?.watch;
+    const errors = formContext?.formState?.errors;
 
     const currentCustomerId = watch ? watch('customer_id') : '';
 
@@ -98,6 +99,7 @@ export default function StepClient() {
                     </p>
                 </div>
 
+
                 {selectedClient && (
                     <div className="self-start sm:self-center flex items-center gap-1.5 px-3 py-1.5 bg-success/15 border border-success/30 rounded-full text-xs font-semibold text-success animate-fade-in">
                         <CheckCircle2 className="w-4 h-4 text-success" />
@@ -169,6 +171,12 @@ export default function StepClient() {
                             </button>
                         )}
                     </div>
+
+                    {errors?.customer_id && (
+                        <span className="text-xs text-error mt-0.5 font-medium">
+                            {errors.customer_id.message}
+                        </span>
+                    )}
 
                     {/* RESULTADOS DE LA BUSQUEDA EN EL DROPDOWN */}
                     {isOpen && searchTerm.trim().length > 0 && !selectedClient && (
