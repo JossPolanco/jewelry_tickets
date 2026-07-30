@@ -756,7 +756,7 @@ export default function OrderDetail() {
                         <PDFDownloadLink
                             key={fullPreparedOrder?.order_items?.map((i) => i.photos?.map((p) => p.dataUrl || p.id).join('-')).join('_') || 'pdf-loading'}
                             document={<OrderServicePDF order={fullPreparedOrder || order} itemPhotosMap={resolvedItemPhotos} />}
-                            fileName={`orden_${order?.folio || 'servicio'}.pdf`}
+                            fileName={`service_orden_${order?.folio || 'servicio'}.pdf`}
                         >
                             {({ blob, url, loading, error }) => (
                                 loading ? (
