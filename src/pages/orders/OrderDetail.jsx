@@ -13,8 +13,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useUser } from '@/utils/context/UserContext';
 import { ITEM_TYPES, SERVICE_TYPES } from '@/utils';
+import { Download } from 'reicon-react';
 import Modal from '@/components/Modal';
 import Toast from '@/components/Toast';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import OrderServicePDF, { convertUrlToJpegDataUrl } from '../../utils/pdfs/OrderServicePDF';
 
 // ESTADOS DE ORDEN DISPONIBLES
 const ORDER_STATUS_OPTIONS = [
@@ -359,11 +362,14 @@ export default function OrderDetail() {
                                     if (metaRes.success) {
                                         const img = metaRes.data.image;
                                         const urlRes = await getSignedUrl(img.storage_path, img.bucket || BUCKETS.PHOTOS);
+                                        const signedUrl = urlRes.success ? urlRes.data.signedUrl : null;
+                                        const dataUrl = signedUrl ? await convertUrlToJpegDataUrl(signedUrl) : null;
                                         return {
                                             id: img.id,
                                             storage_path: img.storage_path,
                                             bucket: img.bucket || BUCKETS.PHOTOS,
-                                            signedUrl: urlRes.success ? urlRes.data.signedUrl : null
+                                            signedUrl,
+                                            dataUrl
                                         };
                                     }
                                 } catch (err) {
@@ -603,7 +609,7 @@ export default function OrderDetail() {
             case 'en proceso':
                 return 'badge-warning bg-warning/10 text-warning border-warning/20';
             case 'pendiente':
-                return 'badge-warning bg-amber-500/10 text-amber-600 border-amber-500/20';            
+                return 'badge-warning bg-amber-500/10 text-amber-600 border-amber-500/20';
             case 'reparacion':
                 return 'badge-secondary bg-secondary/10 text-secondary border-secondary/20';
             case 'listo':
@@ -637,6 +643,10 @@ export default function OrderDetail() {
         const encodedMsg = encodeURIComponent(message);
         window.open(`https://wa.me/${cleanPhone}?text=${encodedMsg}`, '_blank');
     };
+
+    const handleDownloadPdf = () => {
+        console.log("Descargar PDF")
+    }
 
     // ESTADO DE CARGA Y ERRORES DE LA PÁGINA
     if (isLoadingOrder) {
@@ -726,6 +736,26 @@ export default function OrderDetail() {
 
                     {/* BOTONES DE ACCIÓN PRINCIPALES */}
                     <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-base-200">
+                        <PDFDownloadLink document={<OrderServicePDF order={order} itemPhotosMap={resolvedItemPhotos} />} fileName={`orden_${order?.folio || 'servicio'}.pdf`}>
+                            {({ blob, url, loading, error }) => (
+                                loading ? (
+                                    <span
+                                        className="btn btn-error btn-sm h-11 rounded-xl font-bold gap-1.5 shadow-xs transition-all text-xs sm:text-sm flex-1 sm:flex-none text-white pointer-events-none opacity-70 flex items-center justify-center"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        Cargando...
+                                    </span>
+                                ) : (
+                                    <span
+                                        className="btn btn-error btn-sm h-11 rounded-xl font-bold gap-1.5 shadow-xs active:scale-95 transition-all text-xs sm:text-sm flex-1 sm:flex-none text-white flex items-center justify-center"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        Descargar PDF
+                                    </span>
+                                )
+                            )}
+                        </PDFDownloadLink>
+
                         {customer?.phone && (
                             <button
                                 type="button"
