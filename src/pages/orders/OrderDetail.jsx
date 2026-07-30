@@ -17,7 +17,7 @@ import { Download } from 'reicon-react';
 import Modal from '@/components/Modal';
 import Toast from '@/components/Toast';
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import OrderServicePDF, { convertUrlToJpegDataUrl } from '../../utils/pdfs/OrderServicePDF';
+import OrderServicePDF, { getPdfPhotoDataUrl } from '../../utils/pdfs/OrderServicePDF';
 
 // ESTADOS DE ORDEN DISPONIBLES
 const ORDER_STATUS_OPTIONS = [
@@ -363,13 +363,13 @@ export default function OrderDetail() {
                                         const img = metaRes.data.image;
                                         const urlRes = await getSignedUrl(img.storage_path, img.bucket || BUCKETS.PHOTOS);
                                         const signedUrl = urlRes.success ? urlRes.data.signedUrl : null;
-                                        const dataUrl = signedUrl ? await convertUrlToJpegDataUrl(signedUrl) : null;
+                                        const dataUrl = await getPdfPhotoDataUrl(img.storage_path, img.bucket || BUCKETS.PHOTOS);
                                         return {
                                             id: img.id,
                                             storage_path: img.storage_path,
                                             bucket: img.bucket || BUCKETS.PHOTOS,
                                             signedUrl,
-                                            dataUrl
+                                            dataUrl: dataUrl || signedUrl
                                         };
                                     }
                                 } catch (err) {
@@ -396,6 +396,23 @@ export default function OrderDetail() {
             isMounted = false;
         };
     }, [items]);
+
+    // ORDEN DE SERVICIO PREPARADA CON FOTOGRAFÍAS BASE64 PARA PDF
+    const fullPreparedOrder = useEffect ? React.useMemo(() => {
+        if (!order) return null;
+        const orderItems = items.map((item) => {
+            const itemPhotos = resolvedItemPhotos[item.id] || [];
+            return {
+                ...item,
+                photos: itemPhotos
+            };
+        });
+        return {
+            ...order,
+            order_items: orderItems,
+            items: orderItems
+        };
+    }, [order, items, resolvedItemPhotos]) : null;
 
     // MUTACIÓN PARA ACTUALIZAR DATOS DE LA ORDEN DE SERVICIO
     const [orderForm, setOrderForm] = useState({
@@ -736,7 +753,11 @@ export default function OrderDetail() {
 
                     {/* BOTONES DE ACCIÓN PRINCIPALES */}
                     <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-base-200">
-                        <PDFDownloadLink document={<OrderServicePDF order={order} itemPhotosMap={resolvedItemPhotos} />} fileName={`orden_${order?.folio || 'servicio'}.pdf`}>
+                        <PDFDownloadLink
+                            key={fullPreparedOrder?.order_items?.map((i) => i.photos?.map((p) => p.dataUrl || p.id).join('-')).join('_') || 'pdf-loading'}
+                            document={<OrderServicePDF order={fullPreparedOrder || order} itemPhotosMap={resolvedItemPhotos} />}
+                            fileName={`orden_${order?.folio || 'servicio'}.pdf`}
+                        >
                             {({ blob, url, loading, error }) => (
                                 loading ? (
                                     <span

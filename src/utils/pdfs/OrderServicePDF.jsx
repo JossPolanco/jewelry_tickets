@@ -5,8 +5,12 @@ import { SERVICE_TYPES } from '../orders/service_types';
 import { getImageById } from '@/services/images/imageMetadata';
 import { getSignedUrl } from '@/services/images/imageUrl';
 import { BUCKETS } from '@/services/images/imageUploader';
+import { supabaseClient } from '@/utils/supabase';
 
-// ── ESTILOS DEL DOCUMENTO PDF ──────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// ESTILOS DEL DOCUMENTO PDF EN @REACT-PDF/RENDERER
+// CONFIGURACION DE PALETA DE COLORES, TIPOGRAFIA Y MAQUETADO DE LA ORDEN DE SERVICIO
+// ═════════════════════════════════════════════════════════════════════════════
 const styles = StyleSheet.create({
     page: {
         paddingTop: 28,
@@ -17,7 +21,7 @@ const styles = StyleSheet.create({
         fontSize: 8.5,
         color: '#1E293B',
     },
-    // Header
+    // ENCABEZADO Y BADGE DE ESTADO
     headerContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -59,7 +63,7 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
     },
 
-    // Grilla de información 2 Columnas
+    // GRILLA DE INFORMACIÓN DEL CLIENTE Y SERVICIO (2 COLUMNAS)
     gridContainer: {
         flexDirection: 'row',
         gap: 10,
@@ -99,7 +103,7 @@ const styles = StyleSheet.create({
         fontSize: 8,
     },
 
-    // Tabla de Ítems
+    // TABLA DE PIEZAS / ÍTEMS EN TALLER
     sectionHeader: {
         fontSize: 9.5,
         fontFamily: 'Helvetica-Bold',
@@ -148,7 +152,7 @@ const styles = StyleSheet.create({
     colWeight: { width: '12%', textAlign: 'center', fontSize: 8 },
     colPrice: { width: '18%', textAlign: 'right', fontFamily: 'Helvetica-Bold', color: '#0F172A', fontSize: 8.5 },
 
-    // Sección de Detalle y Evidencia Fotográfica ampliada
+    // DETALLES Y EVIDENCIA FOTOGRÁFICA AMPLIADA POR PIEZA
     itemDetailSection: {
         marginTop: 6,
         paddingTop: 6,
@@ -213,7 +217,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Helvetica-Bold',
     },
 
-    // Totales y Notas
+    // TOTOALES Y RESUMEN ECONÓMICO
     summarySection: {
         flexDirection: 'row',
         gap: 10,
@@ -283,7 +287,7 @@ const styles = StyleSheet.create({
         color: '#92400E',
     },
 
-    // Términos y Firma
+    // AVISO LEGAL Y AREA DE FIRMA DEL CLIENTE
     footerArea: {
         marginTop: 'auto',
         paddingTop: 8,
@@ -340,7 +344,13 @@ const styles = StyleSheet.create({
     }
 });
 
-// ── FUNCIONES DE FORMATO Y UTILIDADES ──────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// FUNCIONES AUXILIARES DE FORMATO Y UTILIDADES DE TEXTO
+// ═════════════════════════════════════════════════════════════════════════════
+
+/**
+ * FORMATEA UN VALOR NUMÉRICO A FORMATO DE MONEDA MONEDA MEXICANA (MXN)
+ */
 function formatCurrency(amount) {
     const val = Number(amount);
     if (isNaN(val)) return '$0.00';
@@ -350,6 +360,9 @@ function formatCurrency(amount) {
     }).format(val);
 }
 
+/**
+ * FORMATEA UNA FECHA ISO/STRING A FORMATO ESPAÑOL DD/MM/YYYY
+ */
 function formatDate(dateString) {
     if (!dateString) return 'N/A';
     try {
@@ -365,19 +378,31 @@ function formatDate(dateString) {
     }
 }
 
+/**
+ * FORMATEA EL NÚMERO DE FOLIO CON RELLENO DE CEROS A LA IZQUIERDA (EJ: #00007)
+ */
 function formatFolio(folio) {
     if (folio === undefined || folio === null) return '#00000';
     return `#${String(folio).padStart(5, '0')}`;
 }
 
+/**
+ * RETORNA LA ETIQUETA EN ESPAÑOL PARA EL TIPO DE PIEZA DE JOYERÍA
+ */
 function getItemLabel(typeKey) {
     return ITEM_TYPES[typeKey] || typeKey || 'Pieza';
 }
 
+/**
+ * RETORNA LA ETIQUETA EN ESPAÑOL PARA EL SERVICIO SOLICITADO
+ */
 function getServiceLabel(serviceKey) {
     return SERVICE_TYPES[serviceKey] || serviceKey || 'Servicio';
 }
 
+/**
+ * RETORNA EL ESTILO DE COLOR SEGÚN EL ESTADO DE LA ORDEN DE SERVICIO
+ */
 function getStatusStyle(status = '') {
     const s = String(status).toLowerCase();
     if (s.includes('pendiente')) return { backgroundColor: '#FEF3C7', color: '#92400E' };
@@ -388,57 +413,79 @@ function getStatusStyle(status = '') {
     return { backgroundColor: '#F1F5F9', color: '#334155' };
 }
 
-/**
- * Convierte cualquier URL de imagen (WebP, PNG, JPG, Supabase Signed URL) a un JPEG Data URL en base64
- * para garantizar compatibilidad nativa al 100% con react-pdf.
- */
-export async function convertUrlToJpegDataUrl(url) {
-    if (!url) return null;
-    if (typeof window === 'undefined') return url;
-    if (url.startsWith('data:image/jpeg') || url.startsWith('data:image/png')) {
-        return url;
-    }
+// ═════════════════════════════════════════════════════════════════════════════
+// FUNCION PARA DESCARGAR IMAGEN DE SUPABASE Y CONVERTIR A BASE64 JPEG
+// DESCARGA EL BLOB DE LA IMAGEN DIRECTAMENTE DESDE SUPABASE STORAGE USANDO SU SDK
+// Y LA CONVIERTE A UN DATA URL JPEG BASE64 EN MEMORIA MEDIANTE CANVAS.
+// ESTO GARANTIZA QUE @REACT-PDF/RENDERER PUEDA RENDERIZAR CUALQUIER FORMATO (INCLUYENDO WEBP)
+// SIN PROBLEMAS DE RESTRICCIONES CORS O CADUCIDAD DE URLs FIRMADAS.
+// ═════════════════════════════════════════════════════════════════════════════
+export async function getPdfPhotoDataUrl(storagePath, bucket = 'photos') {
+    if (!storagePath) return null;
+    try {
+        const { data: blob, error } = await supabaseClient.storage
+            .from(bucket)
+            .download(storagePath);
 
-    return new Promise((resolve) => {
-        const img = new window.Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-            try {
-                const canvas = document.createElement('canvas');
-                const maxDim = 800;
-                let w = img.naturalWidth || img.width || 400;
-                let h = img.naturalHeight || img.height || 400;
-                if (w > maxDim || h > maxDim) {
-                    if (w > h) {
-                        h = Math.round((h * maxDim) / w);
-                        w = maxDim;
-                    } else {
-                        w = Math.round((w * maxDim) / h);
-                        h = maxDim;
+        if (error || !blob) {
+            console.warn('Error al descargar blob de imagen desde Supabase:', error);
+            return null;
+        }
+
+        if (typeof window === 'undefined') return null;
+
+        return new Promise((resolve) => {
+            const blobUrl = URL.createObjectURL(blob);
+            const img = new window.Image();
+
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    const maxDim = 800;
+                    let w = img.naturalWidth || img.width || 400;
+                    let h = img.naturalHeight || img.height || 400;
+                    if (w > maxDim || h > maxDim) {
+                        if (w > h) {
+                            h = Math.round((h * maxDim) / w);
+                            w = maxDim;
+                        } else {
+                            w = Math.round((w * maxDim) / h);
+                            h = maxDim;
+                        }
                     }
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                    URL.revokeObjectURL(blobUrl);
+                    resolve(dataUrl);
+                } catch (err) {
+                    console.warn('Error al convertir blob a JPEG canvas:', err);
+                    URL.revokeObjectURL(blobUrl);
+                    resolve(null);
                 }
-                canvas.width = w;
-                canvas.height = h;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, w, h);
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-                resolve(dataUrl);
-            } catch (e) {
-                console.warn('Falló conversión de imagen a canvas dataUrl:', e);
-                resolve(url);
-            }
-        };
-        img.onerror = (e) => {
-            console.warn('Error al cargar imagen para conversión canvas:', e);
-            resolve(url);
-        };
-        img.src = url;
-    });
+            };
+
+            img.onerror = (err) => {
+                console.warn('Error al renderizar blob local:', err);
+                URL.revokeObjectURL(blobUrl);
+                resolve(null);
+            };
+
+            img.src = blobUrl;
+        });
+    } catch (e) {
+        console.warn('Excepción en getPdfPhotoDataUrl:', e);
+        return null;
+    }
 }
 
-/**
- * Convierte el array de trazos de react-signature-canvas a Data URL SVG en base64
- */
+// ═════════════════════════════════════════════════════════════════════════════
+// FUNCION PARA CONVERTIR TRAZOS DE FIRMA A SVG BASE64
+// TRANSFORMA EL ARRAY DE COORDENADAS JSONB DE LA FIRMA (TRAZOS DE REACT-SIGNATURE-CANVAS)
+// A UNA IMAGEN SVG VECTORIAL BASE64 COMPATIBLE CON @REACT-PDF/RENDERER.
+// ═════════════════════════════════════════════════════════════════════════════
 export function convertSignatureToSvgDataUrl(signatureData) {
     if (!signatureData) return null;
 
@@ -508,9 +555,11 @@ export function convertSignatureToSvgDataUrl(signatureData) {
     }
 }
 
-/**
- * Servicio auxiliar para precargar Signed URLs de fotografías de ítems para PDF
- */
+// ═════════════════════════════════════════════════════════════════════════════
+// FUNCION AUXILIAR PARA PRECARGAR FOTOGRAFIAS DE ORDEN DE SERVICIO
+// ITERA SOBRE LOS ÍTEMS DE UNA ORDEN Y RESUELVE SUS FOTOGRAFÍAS DESDE SUPABASE
+// CONVIRTIÉNDOLAS A DATA URLs BASE64 EN UN DICCIONARIO CLAVE-VALOR { [photoId]: dataUrl }.
+// ═════════════════════════════════════════════════════════════════════════════
 export async function resolveOrderPhotoUrls(order) {
     if (!order || (!order.order_items && !order.items)) return {};
     const items = order.order_items || order.items || [];
@@ -537,10 +586,9 @@ export async function resolveOrderPhotoUrls(order) {
                 const metaRes = await getImageById(id);
                 if (metaRes?.success && metaRes.data?.image) {
                     const img = metaRes.data.image;
-                    const urlRes = await getSignedUrl(img.storage_path, img.bucket || BUCKETS.PHOTOS || 'photos');
-                    if (urlRes?.success && urlRes.data?.signedUrl) {
-                        const jpegDataUrl = await convertUrlToJpegDataUrl(urlRes.data.signedUrl);
-                        photoMap[id] = jpegDataUrl || urlRes.data.signedUrl;
+                    const jpegDataUrl = await getPdfPhotoDataUrl(img.storage_path, img.bucket || BUCKETS.PHOTOS || 'photos');
+                    if (jpegDataUrl) {
+                        photoMap[id] = jpegDataUrl;
                     }
                 }
             } catch (err) {
@@ -552,10 +600,15 @@ export async function resolveOrderPhotoUrls(order) {
     return photoMap;
 }
 
+// ═════════════════════════════════════════════════════════════════════════════
+// FUNCION DE EXTRACCION DE FOTOS POR ITEM
+// EXTRAE LAS URLs/DATA-URLs DE FOTOGRAFÍAS ASOCIADAS A UN ÍTEM ESPECÍFICO
+// EVALUANDO MÚLTIPLES ESTRUCTURAS (itemPhotosMap, item.photos O item.photo_ids).
+// ═════════════════════════════════════════════════════════════════════════════
 function getItemPhotos(item, itemPhotosMap) {
     if (!item) return [];
 
-    // 1. Si itemPhotosMap viene estructurado por itemId
+    // 1. SI itemPhotosMap VIENE ESTRUCTURADO POR itemId
     if (itemPhotosMap && item.id && Array.isArray(itemPhotosMap[item.id])) {
         const urls = itemPhotosMap[item.id]
             .map(p => typeof p === 'string' ? p : p?.dataUrl || p?.signedUrl || p?.url)
@@ -563,7 +616,7 @@ function getItemPhotos(item, itemPhotosMap) {
         if (urls.length > 0) return urls;
     }
 
-    // 2. Si el ítem ya contiene el array `photos` con `dataUrl` o `signedUrl`
+    // 2. SI EL ÍTEM YA CONTIENE EL ARRAY `photos` CON `dataUrl` O `signedUrl`
     if (Array.isArray(item.photos)) {
         const urls = item.photos
             .map(p => typeof p === 'string' ? p : p?.dataUrl || p?.signedUrl || p?.url)
@@ -571,7 +624,7 @@ function getItemPhotos(item, itemPhotosMap) {
         if (urls.length > 0) return urls;
     }
 
-    // 3. Buscar photo_ids dentro de itemPhotosMap si es un mapa por ID de foto
+    // 3. BUSCAR photo_ids DENTRO DE itemPhotosMap SI ES UN MAPA POR ID DE FOTO
     if (Array.isArray(item.photo_ids) && itemPhotosMap) {
         const urls = item.photo_ids
             .map(id => {
@@ -586,7 +639,11 @@ function getItemPhotos(item, itemPhotosMap) {
     return [];
 }
 
-// ── COMPONENTE PRINCIPAL DEL PDF ───────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// COMPONENTE PRINCIPAL DEL PDF DE ORDEN DE SERVICIO
+// RENDERIZA EL DOCUMENTO PDF COMPLETO DE LA ORDEN DE SERVICIO DE JOYERÍA
+// USANDO LOS COMPONENTES PRIMITIVOS DE @REACT-PDF/RENDERER.
+// ═════════════════════════════════════════════════════════════════════════════
 export default function OrderServicePDF({ order, itemPhotosMap = {} }) {
     if (!order) return null;
 
@@ -604,7 +661,7 @@ export default function OrderServicePDF({ order, itemPhotosMap = {} }) {
         <Document title={`Orden_${order.folio || 'Servicio'}.pdf`}>
             <Page size="LETTER" style={styles.page}>
 
-                {/* HEADER / LOGO & FOLIO */}
+                {/* ENCABEZADO / TÍTULO DE MARCA Y FOLIO */}
                 <View style={styles.headerContainer}>
                     <View style={styles.headerLeft}>
                         <Text style={styles.brandTitle}>ORDEN DE SERVICIO</Text>
@@ -618,7 +675,7 @@ export default function OrderServicePDF({ order, itemPhotosMap = {} }) {
                     </View>
                 </View>
 
-                {/* GRID: CLIENTE Y DATOS DE ORDEN */}
+                {/* DATOS DEL CLIENTE E INFORMACIÓN DE LA ORDEN (2 COLUMNAS) */}
                 <View style={styles.gridContainer}>
                     <View style={styles.card}>
                         <Text style={styles.cardTitle}>Datos del Cliente</Text>
@@ -657,7 +714,7 @@ export default function OrderServicePDF({ order, itemPhotosMap = {} }) {
                     </View>
                 </View>
 
-                {/* TABLA DE ÍTEMS EN TALLER */}
+                {/* TABLA DE PIEZAS / ÍTEMS REGISTRADOS EN LA ORDEN */}
                 <Text style={styles.sectionHeader}>Piezas en Servicio ({items.length})</Text>
                 <View style={styles.tableWrapper}>
                     <View style={styles.tableHeaderRow}>
@@ -740,7 +797,7 @@ export default function OrderServicePDF({ order, itemPhotosMap = {} }) {
                     </View>
                 </View>
 
-                {/* PIE DE PÁGINA, TÉRMINOS Y FIRMA */}
+                {/* PIE DE PÁGINA, TÉRMINOS Y FIRMA DEL CLIENTE */}
                 <View style={styles.footerArea} wrap={false}>
                     <Text style={styles.termsNotice}>
                         * IMPORTANTE: Presentar este comprobante para recoger la(s) pieza(s). Las fechas de entrega son estimadas. Transcurridos 30 días naturales no nos hacemos responsables por piezas no reclamadas.
