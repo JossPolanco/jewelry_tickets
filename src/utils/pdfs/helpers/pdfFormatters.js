@@ -10,6 +10,7 @@
 
 import { ITEM_TYPES } from '../../orders/item_types';
 import { SERVICE_TYPES } from '../../orders/service_types';
+import { parseLocalDate } from '../../dateUtils';
 
 /**
  * FORMATEA UN NÚMERO A MONEDA MEXICANA (MXN)
@@ -31,8 +32,8 @@ export function formatCurrency(amount) {
 export function formatDate(dateString) {
     if (!dateString) return 'N/A';
     try {
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return dateString;
+        const date = parseLocalDate(dateString);
+        if (!date) return dateString;
         return date.toLocaleDateString('es-MX', {
             year: 'numeric',
             month: '2-digit',

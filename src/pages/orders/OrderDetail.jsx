@@ -12,7 +12,7 @@ import { getSignedUrl } from '@/services/images/imageUrl';
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useUser } from '@/utils/context/UserContext';
-import { ITEM_TYPES, SERVICE_TYPES } from '@/utils';
+import { ITEM_TYPES, SERVICE_TYPES, formatDate } from '@/utils';
 import { Download } from 'reicon-react';
 import Modal from '@/components/Modal';
 import Toast from '@/components/Toast';
@@ -606,18 +606,7 @@ export default function OrderDetail() {
         return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(num);
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return 'Sin fecha';
-        try {
-            return new Date(dateString).toLocaleDateString('es-ES', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-        } catch {
-            return dateString;
-        }
-    };
+
 
     const getStatusBadge = (statusStr) => {
         switch (statusStr?.toLowerCase()) {

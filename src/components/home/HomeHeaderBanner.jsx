@@ -2,6 +2,7 @@ import { Search, Plus, X, Sparkles, Phone, User, Calendar, ChevronRight, Loader2
 import React, { useState, useEffect, useRef } from 'react';
 import { quickSearchOrders } from '@/services/orders';
 import { useNavigate } from 'react-router';
+import { formatDate } from '@/utils';
 
 export default function HomeHeaderBanner({ user, organization, onOpenNewOrderModal }) {
     const navigate = useNavigate();
@@ -238,7 +239,7 @@ export default function HomeHeaderBanner({ user, organization, onOpenNewOrderMod
                                                             {order.promised_date && (
                                                                 <span className="flex items-center gap-1">
                                                                     <Calendar className="w-3 h-3 text-base-content/40" />
-                                                                    Promesa: {new Date(order.promised_date).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}
+                                                                    Promesa: {formatDate(order.promised_date, { month: 'short', day: 'numeric' })}
                                                                 </span>
                                                             )}
                                                         </div>

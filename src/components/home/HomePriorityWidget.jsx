@@ -1,22 +1,17 @@
 import React from 'react';
 import { useNavigate } from 'react-router';
 import { Calendar, Clock, ChevronRight, User, Phone, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { formatDate as formatDateUtil } from '@/utils';
 
 export default function HomePriorityWidget({ upcomingDeliveries = [], isLoading = false }) {
     const navigate = useNavigate();
 
     const formatDate = (dateString) => {
-        if (!dateString) return '—';
-        try {
-            const date = new Date(dateString + (dateString.includes('T') ? '' : 'T00:00:00'));
-            return date.toLocaleDateString('es-ES', {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short',
-            });
-        } catch {
-            return dateString;
-        }
+        return formatDateUtil(dateString, {
+            weekday: 'short',
+            day: 'numeric',
+            month: 'short',
+        });
     };
 
     const getUrgencyBadge = (daysDiff) => {

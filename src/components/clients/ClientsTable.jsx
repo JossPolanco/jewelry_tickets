@@ -9,6 +9,7 @@ import { useUser } from '@/utils/context/UserContext';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Modal } from '@/components';
+import { formatDate } from '@/utils';
 import z from 'zod';
 
 const editClientSchema = z.object({
@@ -174,18 +175,7 @@ export default function ClientsTable() {
         setPageIndex(0);
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return '—';
-        try {
-            return new Date(dateString).toLocaleDateString('es-ES', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-            });
-        } catch {
-            return dateString;
-        }
-    };
+
 
     const getInitials = (names, lastnames) => {
         const first = names ? names.trim().charAt(0) : '';

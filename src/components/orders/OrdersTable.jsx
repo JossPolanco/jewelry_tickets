@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { getOrderPreview } from '@/services/orders';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
+import { formatDate } from '@/utils';
 
 export default function OrdersTable() {
     const navigate = useNavigate();
@@ -82,18 +83,7 @@ export default function OrdersTable() {
         setPageIndex(0);
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return '—';
-        try {
-            return new Date(dateString).toLocaleDateString('es-ES', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-            });
-        } catch {
-            return dateString;
-        }
-    };
+
 
     const formatCurrency = (amount) => {
         const num = Number(amount) || 0;
