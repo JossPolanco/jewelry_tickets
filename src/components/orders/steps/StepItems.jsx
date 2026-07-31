@@ -747,18 +747,18 @@ export default function StepItems() {
                     />
 
                     {/* ACCIONES DEL MODAL */}
-                    <div className="pt-3 border-t border-base-200 flex items-center justify-end gap-2">
+                    <div className="sticky -bottom-4 sm:-bottom-5 bg-base-100/95 backdrop-blur-xs pt-3 pb-1 border-t border-base-200 flex items-center justify-end gap-2 shrink-0 z-10">
                         <button
                             type="button"
                             onClick={handleCloseModal}
-                            className="btn btn-ghost h-11 rounded-xl text-xs sm:text-sm font-semibold"
+                            className="btn btn-ghost h-10 rounded-xl text-xs sm:text-sm font-semibold"
                         >
                             Cancelar
                         </button>
                         <button
                             type="button"
                             onClick={handleSaveItem}
-                            className="btn btn-primary h-11 rounded-xl px-4 text-xs sm:text-sm font-bold shadow-xs gap-1.5 active:scale-95 transition-all"
+                            className="btn btn-primary h-10 rounded-xl px-4 text-xs sm:text-sm font-bold shadow-xs gap-1.5 active:scale-95 transition-all"
                         >
                             {editingIndex !== null ? (
                                 <>

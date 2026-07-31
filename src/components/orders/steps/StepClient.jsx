@@ -90,7 +90,7 @@ export default function StepClient() {
     };
 
     return (
-        <div className="space-y-5 py-2 animate-fade-in">
+        <div className="space-y-3 sm:space-y-4 py-1 animate-fade-in">
             {/* INPUT OCULTO PARA EL ID DEL CLIENTE/USUARIO */}
             <input
                 type="hidden"
@@ -99,24 +99,23 @@ export default function StepClient() {
             />
 
             {/* ENCABEZADO DEL PASO 1 */}
-            <div className="border-b border-base-200 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="border-b border-base-200 pb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                 <div>
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="badge badge-primary badge-sm font-bold tracking-wide">PASO 1</span>
-                        <h3 className="text-base sm:text-lg font-bold text-base-content flex items-center gap-2">
-                            <User className="w-5 h-5 text-primary" />
+                    <div className="flex items-center gap-2 mb-0.5">
+                        <span className="badge badge-primary badge-sm font-bold tracking-wide text-[10px]">PASO 1</span>
+                        <h3 className="text-sm sm:text-base font-bold text-base-content flex items-center gap-1.5">
+                            <User className="w-4 h-4 text-primary" />
                             Selección de Cliente
                         </h3>
                     </div>
-                    <p className="text-xs sm:text-sm text-base-content/70">
+                    <p className="text-[11px] sm:text-xs text-base-content/70">
                         Busca por nombre, teléfono o correo para cargar sus datos en la orden.
                     </p>
                 </div>
 
-
                 {selectedClient && (
-                    <div className="self-start sm:self-center flex items-center gap-1.5 px-3 py-1.5 bg-success/15 border border-success/30 rounded-full text-xs font-semibold text-success animate-fade-in">
-                        <CheckCircle2 className="w-4 h-4 text-success" />
+                    <div className="self-start sm:self-center flex items-center gap-1 px-2.5 py-1 bg-success/15 border border-success/30 rounded-full text-[11px] font-semibold text-success animate-fade-in">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-success" />
                         <span>Cliente seleccionado</span>
                     </div>
                 )}
@@ -124,17 +123,17 @@ export default function StepClient() {
 
             {/* CARD BANNER SI YA HAY UN CLIENTE SELECCIONADO */}
             {selectedClient && (
-                <div className="bg-base-100 border-2 border-primary/40 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3 animate-fade-in">
-                    <div className="flex items-center gap-3.5 min-w-0">
-                        <div className="w-12 h-12 rounded-full bg-primary text-primary-content flex items-center justify-center font-bold text-lg shrink-0 shadow-sm">
+                <div className="bg-base-100 border-2 border-primary/40 rounded-xl p-3 shadow-xs flex items-center justify-between gap-2 animate-fade-in">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-full bg-primary text-primary-content flex items-center justify-center font-bold text-base shrink-0 shadow-xs">
                             {selectedClient.full_name?.charAt(0)?.toUpperCase() || 'C'}
                         </div>
                         <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-xs font-bold uppercase tracking-wider text-primary">Cliente Registrado</span>
-                                <UserCheck className="w-4 h-4 text-primary" />
+                            <div className="flex items-center gap-1">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Cliente Registrado</span>
+                                <UserCheck className="w-3.5 h-3.5 text-primary" />
                             </div>
-                            <h4 className="text-base sm:text-lg font-bold text-base-content truncate">
+                            <h4 className="text-xs sm:text-sm font-bold text-base-content truncate">
                                 {selectedClient.full_name}
                             </h4>
                         </div>
@@ -142,9 +141,9 @@ export default function StepClient() {
                     <button
                         type="button"
                         onClick={handleClear}
-                        className="btn btn-ghost btn-sm text-error hover:bg-error/10 gap-1.5 shrink-0 font-medium"
+                        className="btn btn-ghost btn-xs text-error hover:bg-error/10 gap-1 shrink-0 font-semibold"
                     >
-                        <X className="w-4 h-4" />
+                        <X className="w-3.5 h-3.5" />
                         <span className="hidden sm:inline">Cambiar cliente</span>
                         <span className="sm:hidden">Cambiar</span>
                     </button>
@@ -152,11 +151,11 @@ export default function StepClient() {
             )}
 
             {/* FORMULARIO DE BÚSQUEDA Y DATOS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
-                {/* SEARCH INPUT CON DROWPDOWN */}
-                <div className="form-control w-full relative" ref={containerRef}>
-                    <label className="label py-1.5">
-                        <span className="label-text text-sm sm:text-base font-semibold text-base-content">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* SEARCH INPUT CON DROPDOWN */}
+                <div className="form-control w-full" ref={containerRef}>
+                    <label className="label py-1">
+                        <span className="label-text text-xs sm:text-sm font-semibold text-base-content">
                             Buscar Cliente <span className="text-error">*</span>
                         </span>
                     </label>
@@ -165,13 +164,13 @@ export default function StepClient() {
                         <input
                             type="text"
                             placeholder="Escribe un nombre, teléfono o correo..."
-                            className={`input input-bordered w-full h-12 sm:h-13 pl-11 pr-11 text-sm sm:text-base font-medium rounded-xl border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all ${selectedClient ? 'border-primary/50 bg-primary/5 font-semibold text-primary' : ''
+                            className={`input input-bordered w-full h-10 sm:h-11 pl-9 pr-9 text-xs sm:text-sm font-medium rounded-xl border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all ${selectedClient ? 'border-primary/50 bg-primary/5 font-semibold text-primary' : ''
                                 }`}
                             value={searchTerm}
                             onChange={handleInputChange}
                             onFocus={() => setIsOpen(true)}
                         />
-                        <Search className={`w-5 h-5 absolute left-3.5 top-3.5 sm:top-4 transition-colors ${selectedClient ? 'text-primary' : 'text-base-content/40'
+                        <Search className={`w-4 h-4 absolute left-3 top-3 sm:top-3.5 transition-colors ${selectedClient ? 'text-primary' : 'text-base-content/40'
                             }`} />
 
                         {searchTerm && (
@@ -179,9 +178,9 @@ export default function StepClient() {
                                 type="button"
                                 onClick={handleClear}
                                 aria-label="Limpiar búsqueda"
-                                className="absolute right-3.5 top-3.5 sm:top-4 text-base-content/40 hover:text-base-content active:scale-95 transition-all p-0.5 rounded-full hover:bg-base-200"
+                                className="absolute right-3 top-3 sm:top-3.5 text-base-content/40 hover:text-base-content active:scale-95 transition-all p-0.5 rounded-full hover:bg-base-200"
                             >
-                                <X className="w-5 h-5" />
+                                <X className="w-4 h-4" />
                             </button>
                         )}
                     </div>
@@ -192,16 +191,17 @@ export default function StepClient() {
                         </span>
                     )}
 
-                    {/* RESULTADOS DE LA BUSQUEDA EN EL DROPDOWN */}
+                    {/* RESULTADOS DE LA BUSQUEDA - INLINE CON ALTURA FIJA */}
                     {isOpen && searchTerm.trim().length > 0 && !selectedClient && (
-                        <div className="absolute left-0 right-0 top-full mt-2 z-40 bg-base-100 border border-base-300 rounded-2xl shadow-2xl overflow-hidden max-h-72 overflow-y-auto animate-fade-in">
-                            <div className="px-4 py-2 bg-base-200/50 text-[11px] font-bold text-base-content/60 uppercase tracking-wider border-b border-base-200">
+                        <div className="mt-1.5 bg-base-100 border border-base-300 rounded-xl shadow-md overflow-hidden">
+                            <div className="px-3 py-1.5 bg-base-200/80 text-[10px] font-bold text-base-content/60 uppercase tracking-wider border-b border-base-200">
                                 Clientes encontrados
                             </div>
+                            <div className="max-h-44 overflow-y-auto">
 
                             {isLoading ? (
-                                <div className="p-6 text-center text-sm text-base-content/70 flex flex-col items-center justify-center gap-2">
-                                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                <div className="p-4 text-center text-xs text-base-content/70 flex flex-col items-center justify-center gap-1.5">
+                                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
                                     <span>Buscando en la base de datos...</span>
                                 </div>
                             ) : clients.length > 0 ? (
@@ -213,26 +213,26 @@ export default function StepClient() {
                                                 key={client.id}
                                                 type="button"
                                                 onClick={() => handleSelectClient(client)}
-                                                className="w-full p-3.5 sm:p-4 text-left hover:bg-primary/5 active:bg-primary/10 transition-colors flex items-center justify-between gap-3 group"
+                                                className="w-full p-2.5 sm:p-3 text-left hover:bg-primary/5 active:bg-primary/10 transition-colors flex items-center justify-between gap-2 group"
                                             >
-                                                <div className="flex items-center gap-3 min-w-0">
-                                                    <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0">
+                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
                                                         {name.charAt(0).toUpperCase()}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <div className="font-bold text-sm sm:text-base text-base-content truncate group-hover:text-primary transition-colors">
+                                                        <div className="font-bold text-xs sm:text-sm text-base-content truncate group-hover:text-primary transition-colors">
                                                             {name}
                                                         </div>
-                                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5 text-xs text-base-content/60">
+                                                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5 text-[11px] text-base-content/60">
                                                             {client.phone && (
                                                                 <span className="flex items-center gap-1">
-                                                                    <Phone className="w-3.5 h-3.5 text-primary/70" />
+                                                                    <Phone className="w-3 h-3 text-primary/70" />
                                                                     {client.phone}
                                                                 </span>
                                                             )}
                                                             {client.email && (
                                                                 <span className="flex items-center gap-1 truncate">
-                                                                    <Mail className="w-3.5 h-3.5 text-primary/70" />
+                                                                    <Mail className="w-3 h-3 text-primary/70" />
                                                                     {client.email}
                                                                 </span>
                                                             )}
@@ -240,64 +240,63 @@ export default function StepClient() {
                                                     </div>
                                                 </div>
 
-                                                <ChevronRight className="w-5 h-5 text-base-content/30 group-hover:text-primary transition-colors shrink-0" />
+                                                <ChevronRight className="w-4 h-4 text-base-content/30 group-hover:text-primary transition-colors shrink-0" />
                                             </button>
                                         );
                                     })}
                                 </div>
                             ) : (
-                                <div className="p-6 text-center text-sm text-base-content/60 flex flex-col items-center justify-center gap-1">
-                                    <User className="w-8 h-8 text-base-content/30 mb-1" />
+                                <div className="p-4 text-center text-xs text-base-content/60 flex flex-col items-center justify-center gap-1">
+                                    <User className="w-6 h-6 text-base-content/30 mb-0.5" />
                                     <span className="font-semibold text-base-content">No se encontraron clientes</span>
-                                    <span className="text-xs text-base-content/50">Intenta buscar con otro nombre o teléfono</span>
+                                    <span className="text-[11px] text-base-content/50">Intenta buscar con otro nombre o teléfono</span>
                                 </div>
                             )}
+                            </div>
                         </div>
                     )}
                 </div>
 
                 {/* Telefono Input (Read Only) */}
                 <div className="form-control w-full">
-                    <label className="label py-1.5 flex justify-between items-center">
-                        <span className="label-text text-sm sm:text-base font-semibold text-base-content">
+                    <label className="label py-1 flex justify-between items-center">
+                        <span className="label-text text-xs sm:text-sm font-semibold text-base-content">
                             Teléfono / Contacto
                         </span>
-                        <span className="label-text-alt text-xs text-base-content/50 font-medium">Solo lectura</span>
+                        <span className="label-text-alt text-[11px] text-base-content/50 font-medium">Solo lectura</span>
                     </label>
                     <div className="relative">
                         <input
                             type="text"
                             placeholder="Selecciona un cliente para cargar..."
-                            className="input input-bordered w-full h-12 sm:h-13 pl-11 text-sm sm:text-base font-medium rounded-xl bg-base-200/60 border-base-300/80 cursor-not-allowed text-base-content"
+                            className="input input-bordered w-full h-10 sm:h-11 pl-9 text-xs sm:text-sm font-medium rounded-xl bg-base-200/60 border-base-300/80 cursor-not-allowed text-base-content"
                             value={selectedClient?.phone || ''}
                             readOnly
                         />
-                        <Phone className="w-5 h-5 absolute left-3.5 top-3.5 sm:top-4 text-base-content/40" />
+                        <Phone className="w-4 h-4 absolute left-3 top-3 sm:top-3.5 text-base-content/40" />
                     </div>
                 </div>
             </div>
 
             {/* Email Input (Read Only) */}
             <div className="form-control w-full">
-                <label className="label py-1.5 flex justify-between items-center">
-                    <span className="label-text text-sm sm:text-base font-semibold text-base-content">
+                <label className="label py-1 flex justify-between items-center">
+                    <span className="label-text text-xs sm:text-sm font-semibold text-base-content">
                         Correo Electrónico
                     </span>
-                    <span className="label-text-alt text-xs text-base-content/50 font-medium">Solo lectura</span>
+                    <span className="label-text-alt text-[11px] text-base-content/50 font-medium">Solo lectura</span>
                 </label>
                 <div className="relative">
                     <input
                         type="email"
                         placeholder="Selecciona un cliente para cargar..."
-                        className="input input-bordered w-full h-12 sm:h-13 pl-11 text-sm sm:text-base font-medium rounded-xl bg-base-200/60 border-base-300/80 cursor-not-allowed text-base-content"
+                        className="input input-bordered w-full h-10 sm:h-11 pl-9 text-xs sm:text-sm font-medium rounded-xl bg-base-200/60 border-base-300/80 cursor-not-allowed text-base-content"
                         value={selectedClient?.email || ''}
                         readOnly
                     />
-                    <Mail className="w-5 h-5 absolute left-3.5 top-3.5 sm:top-4 text-base-content/40" />
+                    <Mail className="w-4 h-4 absolute left-3 top-3 sm:top-3.5 text-base-content/40" />
                 </div>
             </div>
         </div>
     );
 }
-
-

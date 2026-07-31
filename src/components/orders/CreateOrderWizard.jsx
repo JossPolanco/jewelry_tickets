@@ -216,14 +216,14 @@ export default function CreateOrderWizard({ onClose, showToast }) {
     };
 
     return (
-        <div className="w-full flex flex-col space-y-6">
+        <div className="w-full flex flex-col space-y-3 sm:space-y-4">
             <FormProvider {...methods}>
-                <div className="w-full flex flex-col space-y-6">
+                <div className="w-full flex flex-col space-y-3 sm:space-y-4">
                     {/* Banner de Borrador Restaurado */}
                     {restoredFromDraft && (
-                        <div className="bg-info/10 border border-info/30 rounded-xl p-2.5 sm:p-3 flex items-center justify-between gap-2 shadow-2xs animate-fade-in text-xs">
+                        <div className="bg-info/10 border border-info/30 rounded-xl p-2 sm:p-2.5 flex items-center justify-between gap-2 shadow-2xs animate-fade-in text-[11px] sm:text-xs">
                             <div className="flex items-center gap-2 text-info min-w-0">
-                                <FileText className="w-4 h-4 shrink-0" />
+                                <FileText className="w-3.5 h-3.5 shrink-0" />
                                 <span className="font-semibold text-base-content/90 truncate">
                                     Se ha restaurado automáticamente tu borrador en progreso.
                                 </span>
@@ -231,19 +231,18 @@ export default function CreateOrderWizard({ onClose, showToast }) {
                             <button
                                 type="button"
                                 onClick={handleClearDraft}
-                                className="btn btn-ghost btn-xs text-error hover:bg-error/10 gap-1 rounded-lg shrink-0 font-bold"
+                                className="btn btn-ghost btn-xs text-error hover:bg-error/10 gap-1 rounded-lg shrink-0 font-bold text-[11px]"
                                 title="Limpiar datos y empezar orden en blanco"
                             >
-                                <RotateCcw className="w-3.5 h-3.5" />
-                                Descartar borrador
+                                <RotateCcw className="w-3 h-3" />
+                                Descartar
                             </button>
                         </div>
                     )}
 
                     {/* Stepper Header */}
-                    <div className="w-full">
-
-                        <ul className="steps steps-horizontal w-full text-xs sm:text-sm font-medium">
+                    <div className="w-full overflow-x-auto py-0.5">
+                        <ul className="steps steps-horizontal w-full text-[11px] sm:text-xs font-medium">
                             {STEPS.map((step) => {
                                 const Icon = step.icon;
                                 const isCompleted = currentStep > step.id;
@@ -251,9 +250,9 @@ export default function CreateOrderWizard({ onClose, showToast }) {
 
                                 return (
                                     <li key={step.id} data-content={isCompleted ? '✓' : step.id} className={`step ${isActive || isCompleted ? 'step-primary' : ''} transition-all duration-200`} >
-                                        <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5 mt-1">
-                                            <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-primary' : ''}`} />
-                                            <span className={`${isActive ? 'font-bold text-primary' : ''}`}>
+                                        <div className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1 mt-0.5">
+                                            <Icon className={`w-3 h-3 ${isActive ? 'text-primary' : ''}`} />
+                                            <span className={`${isActive ? 'font-bold text-primary' : ''} text-[10px] sm:text-xs`}>
                                                 {step.label}
                                             </span>
                                         </div>
@@ -264,23 +263,23 @@ export default function CreateOrderWizard({ onClose, showToast }) {
                     </div>
 
                     {/* Step Content Area */}
-                    <div className="min-h-65 bg-base-100/50 rounded-2xl p-2 sm:p-4 border border-base-200">
+                    <div className="bg-base-100/50 rounded-2xl p-2 sm:p-3 border border-base-200">
                         {renderStepContent()}
                     </div>
 
-                    {/* Footer Navigation Buttons */}
-                    <div className="flex items-center justify-between pt-3 border-t border-base-200">
+                    {/* Footer Navigation Buttons (Sticky at Bottom) */}
+                    <div className="sticky -bottom-3 sm:-bottom-4 bg-base-100/95 backdrop-blur-xs pt-2.5 pb-1 border-t border-base-200 flex items-center justify-between shrink-0 z-10">
                         <button
                             type="button"
                             onClick={handlePrev}
                             disabled={currentStep === 1}
-                            className="btn btn-outline btn-sm sm:btn-md gap-1"
+                            className="btn btn-outline btn-xs sm:btn-sm rounded-xl font-bold gap-1"
                         >
-                            <ChevronLeft className="w-4 h-4" />
+                            <ChevronLeft className="w-3.5 h-3.5" />
                             Anterior
                         </button>
 
-                        <span className="text-xs text-base-content/60 font-medium">
+                        <span className="text-[11px] sm:text-xs text-base-content/60 font-semibold">
                             Paso {currentStep} de {STEPS.length}
                         </span>
 
@@ -288,18 +287,18 @@ export default function CreateOrderWizard({ onClose, showToast }) {
                             <button
                                 type="button"
                                 onClick={handleNext}
-                                className="btn btn-primary btn-sm sm:btn-md gap-1"
+                                className="btn btn-primary btn-xs sm:btn-sm rounded-xl font-bold gap-1 shadow-xs"
                             >
                                 Siguiente
-                                <ChevronRight className="w-4 h-4" />
+                                <ChevronRight className="w-3.5 h-3.5" />
                             </button>
                         ) : (
                             <button
                                 type="button"
                                 onClick={methods.handleSubmit(onSubmit, onError)}
-                                className="btn btn-success btn-sm sm:btn-md gap-1 text-white"
+                                className="btn btn-success btn-xs sm:btn-sm rounded-xl font-bold gap-1 text-white shadow-xs"
                             >
-                                <Save className="w-4 h-4" />
+                                <Save className="w-3.5 h-3.5" />
                                 Guardar Orden
                             </button>
                         )}

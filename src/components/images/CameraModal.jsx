@@ -156,9 +156,9 @@ export default function CameraModal({ isOpen, onClose, onCapture, onUseFileFallb
             modalTitle="Cámara en Vivo"
             modalSubtitle="Toma una fotografía directamente para el ítem de la orden"
         >
-            <div className="space-y-4">
+            <div className="space-y-3">
                 {/* ÁREA DE VISUALIZACIÓN / VISTA PREVIA */}
-                <div className="relative bg-black rounded-2xl overflow-hidden aspect4/3 sm:aspect-video flex items-center justify-center border border-base-300 shadow-inner">
+                <div className="relative bg-black rounded-2xl overflow-hidden aspect4/3 sm:aspect-video max-h-52 sm:max-h-64 flex items-center justify-center border border-base-300 shadow-inner">
                     {/* CASO 1: FOTO CAPTURADA */}
                     {capturedImage ? (
                         <img
@@ -168,9 +168,9 @@ export default function CameraModal({ isOpen, onClose, onCapture, onUseFileFallb
                         />
                     ) : error ? (
                         /* CASO 2: ERROR DE PERMISOS O CÁMARA */
-                        <div className="p-6 text-center text-white space-y-3">
-                            <AlertTriangle className="w-10 h-10 text-error mx-auto animate-bounce" />
-                            <p className="text-sm font-medium text-error-content">{error}</p>
+                        <div className="p-4 text-center text-white space-y-2">
+                            <AlertTriangle className="w-8 h-8 text-error mx-auto animate-bounce" />
+                            <p className="text-xs font-medium text-error-content">{error}</p>
                             {onUseFileFallback && (
                                 <button
                                     type="button"
@@ -178,9 +178,9 @@ export default function CameraModal({ isOpen, onClose, onCapture, onUseFileFallb
                                         handleClose();
                                         onUseFileFallback();
                                     }}
-                                    className="btn btn-sm btn-outline btn-info gap-1.5 rounded-xl font-bold mt-2"
+                                    className="btn btn-xs btn-outline btn-info gap-1 rounded-xl font-bold mt-1"
                                 >
-                                    <ImageIcon className="w-4 h-4" />
+                                    <ImageIcon className="w-3.5 h-3.5" />
                                     Seleccionar desde Galería
                                 </button>
                             )}
@@ -208,10 +208,10 @@ export default function CameraModal({ isOpen, onClose, onCapture, onUseFileFallb
                                 <button
                                     type="button"
                                     onClick={toggleFacingMode}
-                                    className="absolute top-3 right-3 btn btn-circle btn-sm bg-black/50 text-white hover:bg-black/80 border-none shadow-md"
+                                    className="absolute top-2.5 right-2.5 btn btn-circle btn-xs sm:btn-sm bg-black/50 text-white hover:bg-black/80 border-none shadow-md"
                                     title="Alternar cámara trasera/frontal"
                                 >
-                                    <RefreshCw className="w-4 h-4" />
+                                    <RefreshCw className="w-3.5 h-3.5" />
                                 </button>
                             )}
                         </>
@@ -222,37 +222,37 @@ export default function CameraModal({ isOpen, onClose, onCapture, onUseFileFallb
                 <canvas ref={canvasRef} className="hidden" />
 
                 {/* BOTONES DE ACCIÓN */}
-                <div className="flex items-center justify-between pt-2 border-t border-base-200">
+                <div className="sticky -bottom-3 sm:-bottom-4 bg-base-100/95 backdrop-blur-xs pt-2 pb-0.5 border-t border-base-200 flex items-center justify-between shrink-0 z-10">
                     <button
                         type="button"
                         onClick={handleClose}
-                        className="btn btn-ghost btn-sm rounded-xl text-xs font-semibold"
+                        className="btn btn-ghost btn-xs sm:btn-sm rounded-xl text-xs font-semibold"
                     >
                         Cancelar
                     </button>
 
                     {capturedImage ? (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                             <button
                                 type="button"
                                 onClick={handleRetake}
-                                className="btn btn-outline btn-sm rounded-xl text-xs font-bold gap-1"
+                                className="btn btn-outline btn-xs sm:btn-sm rounded-xl text-xs font-bold gap-1"
                             >
-                                <RotateCcw className="w-3.5 h-3.5" />
+                                <RotateCcw className="w-3 h-3" />
                                 Repetir
                             </button>
 
                             <button
                                 type="button"
                                 onClick={handleConfirmPhoto}
-                                className="btn btn-primary btn-sm rounded-xl text-xs font-bold gap-1 shadow-sm"
+                                className="btn btn-primary btn-xs sm:btn-sm rounded-xl text-xs font-bold gap-1 shadow-xs"
                             >
-                                <Check className="w-4 h-4" />
-                                Usar esta Foto
+                                <Check className="w-3.5 h-3.5" />
+                                Usar Foto
                             </button>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                             {onUseFileFallback && (
                                 <button
                                     type="button"
@@ -260,9 +260,9 @@ export default function CameraModal({ isOpen, onClose, onCapture, onUseFileFallb
                                         handleClose();
                                         onUseFileFallback();
                                     }}
-                                    className="btn btn-ghost btn-sm text-xs font-semibold gap-1.5 text-base-content/70"
+                                    className="btn btn-ghost btn-xs sm:btn-sm text-[11px] sm:text-xs font-semibold gap-1 text-base-content/70"
                                 >
-                                    <ImageIcon className="w-3.5 h-3.5" />
+                                    <ImageIcon className="w-3 h-3" />
                                     Subir de Galería
                                 </button>
                             )}
@@ -271,9 +271,9 @@ export default function CameraModal({ isOpen, onClose, onCapture, onUseFileFallb
                                 type="button"
                                 onClick={handleTakeSnapshot}
                                 disabled={loading || !!error || !stream}
-                                className="btn btn-primary btn-sm rounded-xl text-xs font-bold gap-1.5 shadow-md active:scale-95 transition-all"
+                                className="btn btn-primary btn-xs sm:btn-sm rounded-xl text-xs font-bold gap-1 shadow-xs active:scale-95 transition-all"
                             >
-                                <Camera className="w-4 h-4" />
+                                <Camera className="w-3.5 h-3.5" />
                                 Tomar Foto
                             </button>
                         </div>
