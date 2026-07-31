@@ -272,7 +272,7 @@ export default function Configuration() {
                                     Términos y Condiciones
                                 </h2>
                                 <p className="text-xs text-base-content/60">
-                                    Políticas y garantías impresas en comprobantes y tickets.
+                                    Políticas y garantías impresas en ordenes de servicio.
                                 </p>
                             </div>
                         </div>

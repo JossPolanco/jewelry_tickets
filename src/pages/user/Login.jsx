@@ -63,7 +63,7 @@ export default function Login() {
                     </h1>
 
                     <p className="text-base-content mt-3 text-sm leading-relaxed max-w-sm">
-                        Un espacio para generar ordenes de servicio.
+                        Un espacio para gestion de usuarios y ordenes de servicio.
                     </p>
                 </div>
 
