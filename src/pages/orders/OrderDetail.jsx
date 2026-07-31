@@ -1,8 +1,10 @@
 import {
     ArrowLeft, Edit3, Calendar, User, Phone, Mail, Package, Scale, DollarSign, Hammer, MessageSquare,
-    Clock, AlertCircle, Plus, Trash2, Camera, Loader2, X, Send, RefreshCw, PenTool, ShieldCheck, Image as ImageIcon
+    Clock, AlertCircle, Plus, Trash2, Camera, Loader2, X, Send, RefreshCw, PenTool, ShieldCheck, Image as ImageIcon,
+    Receipt, ChevronDown, ChevronUp, CreditCard
 } from 'lucide-react';
 import { getOrderDetail, getOrderItems, updateOrder, updateOrderItem, createOrderItem, deleteOrderItem } from '@/services/orders';
+import { getPaymentsByOrderId, createPayment, deletePayment } from '@/services/payments';
 import { getImageById, deleteImageMetadata } from '@/services/images/imageMetadata';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { deleteImage, BUCKETS } from '@/services/images/imageUploader';
@@ -321,6 +323,84 @@ export default function OrderDetail() {
     // REFERENCIAS DE MODALES
     const editOrderModalRef = useRef(null);
     const editItemModalRef = useRef(null);
+    const addPaymentModalRef = useRef(null);
+
+    const { user } = useUser();
+    const [showPaymentsHistory, setShowPaymentsHistory] = useState(false);
+    const [paymentForm, setPaymentForm] = useState({
+        amount: '',
+        payment_method: 'efectivo',
+        notes: ''
+    });
+    const [paymentErrors, setPaymentErrors] = useState({});
+
+    // CONSULTA DE PAGOS
+    const {
+        data: paymentsData = [],
+        isLoading: isLoadingPayments,
+    } = useQuery({
+        queryKey: ['orderPayments', id],
+        queryFn: () => getPaymentsByOrderId(id),
+        enabled: !!id
+    });
+
+    const addPaymentMutation = useMutation({
+        mutationFn: (payload) => createPayment({
+            service_order_id: id,
+            amount: payload.amount,
+            payment_method: payload.payment_method,
+            notes: payload.notes,
+            created_by: user?.id || null
+        }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['orderDetail', id] });
+            queryClient.invalidateQueries({ queryKey: ['orderPayments', id] });
+            addPaymentModalRef.current?.close();
+            showToast('Pago registrado correctamente', 'success');
+        },
+        onError: (err) => {
+            console.error('Error al registrar pago:', err);
+            showToast(err.message || 'Error al registrar el pago', 'error');
+        }
+    });
+
+    const deletePaymentMutation = useMutation({
+        mutationFn: (paymentId) => deletePayment(paymentId, id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['orderDetail', id] });
+            queryClient.invalidateQueries({ queryKey: ['orderPayments', id] });
+            showToast('Pago eliminado correctamente', 'success');
+        },
+        onError: (err) => {
+            console.error('Error al eliminar pago:', err);
+            showToast(err.message || 'Error al eliminar el pago', 'error');
+        }
+    });
+
+    const handleOpenAddPaymentModal = () => {
+        const currentPending = Math.max(0, (parseFloat(order?.total_estimated_cost) || 0) - (parseFloat(order?.advance_payment) || 0));
+        setPaymentForm({
+            amount: currentPending > 0 ? currentPending.toString() : '',
+            payment_method: 'efectivo',
+            notes: ''
+        });
+        setPaymentErrors({});
+        addPaymentModalRef.current?.open();
+    };
+
+    const handleSavePayment = (e) => {
+        e.preventDefault();
+        const errors = {};
+        const numAmount = parseFloat(paymentForm.amount);
+        if (!paymentForm.amount || isNaN(numAmount) || numAmount <= 0) {
+            errors.amount = 'El monto debe ser un número mayor a 0';
+        }
+        if (Object.keys(errors).length > 0) {
+            setPaymentErrors(errors);
+            return;
+        }
+        addPaymentMutation.mutate(paymentForm);
+    };
 
     // CONSULTAS TANSTACK QUERY CON getOrderDetail Y getOrderItems
     const {
@@ -814,10 +894,21 @@ export default function OrderDetail() {
 
                         {/* TARJETA RESUMEN FINANCIERO */}
                         <div className="bg-base-100 border border-base-200 rounded-2xl p-5 shadow-xs space-y-4">
-                            <h2 className="text-sm font-extrabold text-base-content flex items-center gap-2 border-b border-base-200 pb-3">
-                                <DollarSign className="w-4 h-4 text-primary" />
-                                Balance de la Orden
-                            </h2>
+                            <div className="flex items-center justify-between border-b border-base-200 pb-3">
+                                <h2 className="text-sm font-extrabold text-base-content flex items-center gap-2">
+                                    <DollarSign className="w-4 h-4 text-primary" />
+                                    Balance de la Orden
+                                </h2>
+                                {pendingBalance === 0 ? (
+                                    <span className="badge badge-success text-white font-bold text-xs">
+                                        Pagado
+                                    </span>
+                                ) : (
+                                    <span className="badge badge-warning text-warning-content font-bold text-xs">
+                                        Pendiente
+                                    </span>
+                                )}
+                            </div>
 
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between text-xs sm:text-sm">
@@ -826,7 +917,7 @@ export default function OrderDetail() {
                                 </div>
 
                                 <div className="flex items-center justify-between text-xs sm:text-sm">
-                                    <span className="text-base-content/70 font-medium">Anticipo Recibido:</span>
+                                    <span className="text-base-content/70 font-medium">Anticipo / Abonado:</span>
                                     <strong className="text-success font-bold">{formatCurrency(advance)}</strong>
                                 </div>
 
@@ -837,6 +928,81 @@ export default function OrderDetail() {
                                     </span>
                                 </div>
                             </div>
+
+                            {/* BOTÓN AGREGAR PAGO */}
+                            <button
+                                type="button"
+                                onClick={handleOpenAddPaymentModal}
+                                className="btn btn-primary btn-sm h-10 w-full rounded-xl font-bold gap-2 text-white shadow-xs active:scale-95 transition-all text-xs sm:text-sm"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Agregar Pago
+                            </button>
+
+                            {/* HISTORIAL / LISTA DE PAGOS REGISTRADOS */}
+                            {paymentsData && paymentsData.length > 0 && (
+                                <div className="pt-2 border-t border-base-200 space-y-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPaymentsHistory(!showPaymentsHistory)}
+                                        className="flex items-center justify-between w-full text-xs font-bold text-base-content/70 hover:text-primary transition-colors py-1"
+                                    >
+                                        <span className="flex items-center gap-1.5">
+                                            <Receipt className="w-3.5 h-3.5 text-primary" />
+                                            Historial de Pagos ({paymentsData.length})
+                                        </span>
+                                        {showPaymentsHistory ? (
+                                            <ChevronUp className="w-3.5 h-3.5" />
+                                        ) : (
+                                            <ChevronDown className="w-3.5 h-3.5" />
+                                        )}
+                                    </button>
+
+                                    {showPaymentsHistory && (
+                                        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                            {paymentsData.map((p) => (
+                                                <div
+                                                    key={p.id}
+                                                    className="bg-base-200/60 border border-base-200 rounded-xl p-2.5 flex items-center justify-between text-xs transition-all"
+                                                >
+                                                    <div className="space-y-0.5 min-w-0 pr-2">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className="font-bold text-success text-xs sm:text-sm">
+                                                                +{formatCurrency(p.amount)}
+                                                            </span>
+                                                            <span className="badge badge-ghost badge-xs capitalize text-[10px] font-semibold">
+                                                                {p.payment_method}
+                                                            </span>
+                                                        </div>
+                                                        {p.notes && (
+                                                            <p className="text-[11px] text-base-content/70 truncate">
+                                                                {p.notes}
+                                                            </p>
+                                                        )}
+                                                        <span className="text-[10px] text-base-content/50 block">
+                                                            {formatDate(p.created_at)}
+                                                        </span>
+                                                    </div>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (window.confirm('¿Deseas eliminar este registro de pago?')) {
+                                                                deletePaymentMutation.mutate(p.id);
+                                                            }
+                                                        }}
+                                                        disabled={deletePaymentMutation.isPending}
+                                                        className="btn btn-circle btn-ghost btn-xs text-error/60 hover:text-error hover:bg-error/10 shrink-0"
+                                                        title="Eliminar pago"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* FECHA PROMESA DE ENTREGA */}
                             <div className="bg-primary/5 border border-primary/15 rounded-xl p-3.5 flex items-center gap-3 mt-2">
@@ -1367,6 +1533,120 @@ export default function OrderDetail() {
                                 'Guardar Cambios'
                             ) : (
                                 'Añadir Pieza'
+                            )}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* MODAL PARA AGREGAR PAGO A LA ORDEN */}
+            <Modal
+                ref={addPaymentModalRef}
+                className="max-w-md"
+                modalTitle="Agregar Pago a la Orden"
+                modalSubtitle={`Orden #${order?.folio || '—'} • Saldo Pendiente: ${formatCurrency(pendingBalance)}`}
+            >
+                <form onSubmit={handleSavePayment} className="space-y-4">
+                    {/* MONTO DEL PAGO */}
+                    <div className="form-control w-full">
+                        <label className="label py-1 flex justify-between">
+                            <span className="label-text text-xs font-semibold text-base-content">
+                                Monto a Pagar ($) <span className="text-error">*</span>
+                            </span>
+                            {pendingBalance > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => setPaymentForm({ ...paymentForm, amount: pendingBalance.toString() })}
+                                    className="text-[11px] font-bold text-primary hover:underline"
+                                >
+                                    Sugerir total ({formatCurrency(pendingBalance)})
+                                </button>
+                            )}
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-base-content/50">
+                                $
+                            </span>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                placeholder="0.00"
+                                className={`input input-bordered w-full h-11 pl-8 text-sm font-bold rounded-xl border-base-300 focus:border-primary ${paymentErrors.amount ? 'border-error' : ''}`}
+                                value={paymentForm.amount}
+                                onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                            />
+                        </div>
+                        {paymentErrors.amount && (
+                            <span className="text-xs text-error mt-1 font-medium">{paymentErrors.amount}</span>
+                        )}
+                    </div>
+
+                    {/* MÉTODO DE PAGO */}
+                    <div className="form-control w-full space-y-1.5">
+                        <label className="label py-0">
+                            <span className="label-text text-xs font-semibold text-base-content">
+                                Método de Pago <span className="text-error">*</span>
+                            </span>
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                            {[
+                                { id: 'efectivo', label: 'Efectivo', icon: '💵' },
+                                { id: 'tarjeta', label: 'Tarjeta', icon: '💳' },
+                                { id: 'transferencia', label: 'Transferencia', icon: '🏦' }
+                            ].map((method) => (
+                                <button
+                                    key={method.id}
+                                    type="button"
+                                    onClick={() => setPaymentForm({ ...paymentForm, payment_method: method.id })}
+                                    className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-xs font-bold transition-all ${
+                                        paymentForm.payment_method === method.id
+                                            ? 'border-primary bg-primary/10 text-primary shadow-xs'
+                                            : 'border-base-300 hover:border-base-400 bg-base-100 text-base-content/70'
+                                    }`}
+                                >
+                                    <span className="text-lg mb-0.5">{method.icon}</span>
+                                    <span>{method.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* NOTAS / OBSERVACIONES */}
+                    <div className="form-control w-full">
+                        <label className="label py-1">
+                            <span className="label-text text-xs font-semibold text-base-content">
+                                Notas u Observaciones (Opcional)
+                            </span>
+                        </label>
+                        <textarea
+                            placeholder="Ej. Pago parcial en efectivo, referencia de transferencia..."
+                            className="textarea textarea-bordered w-full pt-2.5 text-xs sm:text-sm font-medium rounded-xl border-base-300 focus:border-primary min-h-20"
+                            value={paymentForm.notes}
+                            onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
+                        ></textarea>
+                    </div>
+
+                    {/* BOTONES DE ACCIÓN */}
+                    <div className="pt-3 border-t border-base-200 flex items-center justify-end gap-2">
+                        <button
+                            type="button"
+                            onClick={() => addPaymentModalRef.current?.close()}
+                            className="btn btn-ghost h-11 rounded-xl text-xs sm:text-sm font-semibold"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={addPaymentMutation.isPending}
+                            className="btn btn-primary h-11 rounded-xl px-5 text-xs sm:text-sm font-bold shadow-xs gap-1.5 active:scale-95 transition-all text-white"
+                        >
+                            {addPaymentMutation.isPending ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" /> Guardando...
+                                </>
+                            ) : (
+                                'Registrar Pago'
                             )}
                         </button>
                     </div>

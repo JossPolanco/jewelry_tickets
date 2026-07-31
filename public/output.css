@@ -3953,6 +3953,9 @@
   .px-8 {
     padding-inline: calc(var(--spacing) * 8);
   }
+  .py-0 {
+    padding-block: 0px;
+  }
   .py-0\.5 {
     padding-block: calc(var(--spacing) * 0.5);
   }
@@ -4354,6 +4357,12 @@
   .text-error-content {
     color: var(--color-error-content);
   }
+  .text-error\/60 {
+    color: var(--color-error);
+    @supports (color: color-mix(in lab, red, red)) {
+      color: color-mix(in oklab, var(--color-error) 60%, transparent);
+    }
+  }
   .text-fuchsia-500 {
     color: var(--color-fuchsia-500);
   }
@@ -4428,6 +4437,9 @@
   }
   .text-warning {
     color: var(--color-warning);
+  }
+  .text-warning-content {
+    color: var(--color-warning-content);
   }
   .text-white {
     color: var(--color-white);
@@ -4864,6 +4876,9 @@
       .hover\:text-base-content\/70:hover {
         color: color-mix(in oklab, var(--color-base-content) 70%, transparent);
       }
+    }
+    .hover\:text-error:hover {
+      color: var(--color-error);
     }
     .hover\:text-primary:hover {
       color: var(--color-primary);
