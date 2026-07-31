@@ -110,6 +110,22 @@ export async function getOrderPreview({
     };
 }
 
+export async function recalculateOrderTotalCost(service_order_id) {
+    if (!service_order_id) return 0;
+    const items = await getOrderItems(service_order_id);
+    const total = (items || []).reduce((sum, item) => sum + (parseFloat(item.unit_price) || 0), 0);
+
+    const { error } = await supabaseClient
+        .from("tbl_service_orders")
+        .update({ total_estimated_cost: total })
+        .eq("id", service_order_id);
+
+    if (error) {
+        console.error("Error recalculating order total cost:", error);
+    }
+    return total;
+}
+
 export async function getOrderDetail(id) {
     const { data, error } = await supabaseClient
         .from("tbl_service_orders")
@@ -117,10 +133,22 @@ export async function getOrderDetail(id) {
         .eq("id", id)
         .single();
 
-    const order_items = await getOrderItems(id);
-
     if (error) {
         throw error;
+    }
+
+    const order_items = await getOrderItems(id);
+
+    // Sync total_estimated_cost if mismatch exists between order and sum of order items
+    if (order_items && order_items.length > 0) {
+        const calculatedTotal = order_items.reduce((sum, item) => sum + (parseFloat(item.unit_price) || 0), 0);
+        if (parseFloat(data.total_estimated_cost) !== calculatedTotal) {
+            await supabaseClient
+                .from("tbl_service_orders")
+                .update({ total_estimated_cost: calculatedTotal })
+                .eq("id", id);
+            data.total_estimated_cost = calculatedTotal;
+        }
     }
 
     const finalData = {
@@ -167,6 +195,11 @@ export async function createOrderItem(itemData) {
     if (error) {
         throw error;
     }
+
+    if (itemData?.service_order_id) {
+        await recalculateOrderTotalCost(itemData.service_order_id);
+    }
+
     return data;
 }
 
@@ -181,10 +214,21 @@ export async function updateOrderItem(id, itemData) {
     if (error) {
         throw error;
     }
+
+    if (data?.service_order_id) {
+        await recalculateOrderTotalCost(data.service_order_id);
+    }
+
     return data;
 }
 
 export async function deleteOrderItem(id) {
+    const { data: existingItem } = await supabaseClient
+        .from("tbl_order_items")
+        .select("service_order_id")
+        .eq("id", id)
+        .single();
+
     const { data, error } = await supabaseClient
         .from("tbl_order_items")
         .delete()
@@ -193,6 +237,11 @@ export async function deleteOrderItem(id) {
     if (error) {
         throw error;
     }
+
+    if (existingItem?.service_order_id) {
+        await recalculateOrderTotalCost(existingItem.service_order_id);
+    }
+
     return data;
 }
 
