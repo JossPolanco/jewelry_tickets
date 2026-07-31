@@ -1,3 +1,11 @@
+import { Buffer } from "buffer";
+if (typeof window !== "undefined") {
+    window.Buffer = window.Buffer || Buffer;
+}
+if (typeof globalThis !== "undefined") {
+    globalThis.Buffer = globalThis.Buffer || Buffer;
+}
+
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import ReactDOM from "react-dom/client";

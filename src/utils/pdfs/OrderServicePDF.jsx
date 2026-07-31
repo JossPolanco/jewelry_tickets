@@ -156,10 +156,10 @@ const styles = StyleSheet.create({
     },
     colIndex: { width: '5%', textAlign: 'center', color: '#64748B', fontSize: 8 },
     colType: { width: '18%', fontFamily: 'Helvetica-Bold', fontSize: 8.5 },
-    colService: { width: '22%', color: '#0F172A', fontSize: 8 },
-    colMaterial: { width: '25%', color: '#475569', fontSize: 8 },
+    colService: { width: '22%', fontFamily: 'Helvetica-Bold', fontSize: 8 },
+    colMaterial: { width: '25%', fontFamily: 'Helvetica-Bold', fontSize: 8 },
     colWeight: { width: '12%', textAlign: 'center', fontSize: 8 },
-    colPrice: { width: '18%', textAlign: 'right', fontFamily: 'Helvetica-Bold', color: '#0F172A', fontSize: 8.5 },
+    colPrice: { width: '18%', textAlign: 'right', fontFamily: 'Helvetica-Bold', fontSize: 8.5 },
 
     // DETALLES Y EVIDENCIA FOTOGRÁFICA AMPLIADA POR PIEZA
     itemDetailSection: {

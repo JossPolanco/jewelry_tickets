@@ -7,6 +7,7 @@
     "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-table": "^8.21.3",
     "browser-image-compression": "^2.0.2",
+    "buffer": "^6.0.3",
     "daisyui": "^5.6.6",
     "date-fns": "^4.4.0",
     "lucide-react": "^0.563.0",

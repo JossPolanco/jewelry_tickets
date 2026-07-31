@@ -4,6 +4,9 @@ import { defineConfig } from 'vite';
 import path from 'path';
 
 export default defineConfig({
+    define: {
+        global: 'globalThis',
+    },
     plugins: [react(), basicSsl()],
     resolve: {
         alias: {
