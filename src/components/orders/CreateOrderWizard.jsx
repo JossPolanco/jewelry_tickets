@@ -2,7 +2,7 @@ import { User, Package, DollarSign, PenTool, ChevronLeft, ChevronRight, Save } f
 import { useForm, FormProvider } from 'react-hook-form';
 import { useUser } from '@/utils/context/UserContext';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import StepCostsDate from './steps/StepCostsDate';
 import StepSignature from './steps/StepSignature';
 import { createOrder } from '@/services/orders';
@@ -44,6 +44,7 @@ const STEPS = [
 export default function CreateOrderWizard({ onClose, showToast }) {
     const [currentStep, setCurrentStep] = useState(1);
     const { organization } = useUser();
+    const queryClient = useQueryClient();
 
     const methods = useForm({
         resolver: zodResolver(orderSchema),
@@ -95,7 +96,8 @@ export default function CreateOrderWizard({ onClose, showToast }) {
             if (showToast) {
                 showToast("Orden guardada exitosamente", "success");
             }
-            queryClient.invalidateQueries(['ordersPreview']),
+            queryClient.invalidateQueries(['ordersPreview']);
+            queryClient.invalidateQueries(['homeDashboard']);
             reset();
             setCurrentStep(1);
             if (onClose) {

@@ -12,6 +12,9 @@ export { default as UploadPanel } from './images/UploadPanel'
 // CLIENTS COMPONENTS
 export { default as ClientsTable } from './clients/ClientsTable'
 
+// HOME COMPONENTS
+export { HomeHeaderBanner, HomeKpiCards, HomePriorityWidget } from './home';
+
 // ORDERS COMPONENTS
 export { default as OrdersTable } from './orders/OrdersTable'
 export { default as CreateOrderWizard } from './orders/CreateOrderWizard'
@@ -19,3 +22,4 @@ export { default as StepClient } from './orders/steps/StepClient'
 export { default as StepItems } from './orders/steps/StepItems'
 export { default as StepCostsDate } from './orders/steps/StepCostsDate'
 export { default as StepSignature } from './orders/steps/StepSignature'
+

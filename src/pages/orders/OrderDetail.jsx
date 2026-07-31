@@ -693,7 +693,7 @@ export default function OrderDetail() {
                     <div className="flex gap-2 justify-center">
                         <button
                             type="button"
-                            onClick={() => navigate('/service-orders')}
+                            onClick={() => navigate(-1)}
                             className="btn btn-outline btn-sm rounded-xl"
                         >
                             <ArrowLeft className="w-4 h-4" /> Volver a lista
@@ -727,7 +727,7 @@ export default function OrderDetail() {
                     <div className="flex items-center gap-3">
                         <button
                             type="button"
-                            onClick={() => navigate('/service-orders')}
+                            onClick={() => navigate(-1)}
                             className="btn btn-circle btn-ghost btn-sm hover:bg-base-200 active:scale-95 transition-transform"
                             title="Volver a la lista de órdenes"
                             aria-label="Volver"
