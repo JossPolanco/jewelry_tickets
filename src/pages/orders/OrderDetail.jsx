@@ -9,15 +9,22 @@ import { deleteImage, BUCKETS } from '@/services/images/imageUploader';
 import { useImageUpload } from '@/hooks/images/useImageUpload';
 import { getCurrentUser } from '@/services/user/userService';
 import { getSignedUrl } from '@/services/images/imageUrl';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useUser } from '@/utils/context/UserContext';
 import { ITEM_TYPES, SERVICE_TYPES, formatDate } from '@/utils';
 import { Download } from 'reicon-react';
 import Modal from '@/components/Modal';
 import Toast from '@/components/Toast';
-import { PDFDownloadLink } from '@react-pdf/renderer';
-import OrderServicePDF, { getPdfPhotoDataUrl } from '../../utils/pdfs/OrderServicePDF';
+
+// LAZY LOAD de @react-pdf/renderer y el PDF de orden de servicio
+// El chunk vendor-pdf (~1.4 MB) se carga solo cuando se visita OrderDetail,
+// no contaminando el bundle inicial de la aplicación.
+const PDFDownloadLink = lazy(() =>
+    import('@react-pdf/renderer').then((m) => ({ default: m.PDFDownloadLink }))
+);
+const OrderServicePDF = lazy(() => import('../../utils/pdfs/OrderServicePDF'));
+
 
 // ESTADOS DE ORDEN DISPONIBLES
 const ORDER_STATUS_OPTIONS = [
@@ -349,7 +356,10 @@ export default function OrderDetail() {
         let isMounted = true;
 
         const loadPhotosForItems = async () => {
+            // Importar getPdfPhotoDataUrl dinámicamente desde el módulo PDF pesado
+            const { getPdfPhotoDataUrl } = await import('../../utils/pdfs/OrderServicePDF');
             const photosMap = {};
+
 
             await Promise.all(
                 items.map(async (item) => {
@@ -742,29 +752,36 @@ export default function OrderDetail() {
 
                     {/* BOTONES DE ACCIÓN PRINCIPALES */}
                     <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-base-200">
-                        <PDFDownloadLink
-                            key={fullPreparedOrder?.order_items?.map((i) => i.photos?.map((p) => p.dataUrl || p.id).join('-')).join('_') || 'pdf-loading'}
-                            document={<OrderServicePDF order={fullPreparedOrder || order} itemPhotosMap={resolvedItemPhotos} />}
-                            fileName={`service_orden_${order?.folio || 'servicio'}.pdf`}
-                        >
-                            {({ blob, url, loading, error }) => (
-                                loading ? (
-                                    <span
-                                        className="btn btn-error btn-sm h-11 rounded-xl font-bold gap-1.5 shadow-xs transition-all text-xs sm:text-sm flex-1 sm:flex-none text-white pointer-events-none opacity-70 flex items-center justify-center"
-                                    >
-                                        <Download className="w-4 h-4" />
-                                        Cargando...
-                                    </span>
-                                ) : (
-                                    <span
-                                        className="btn btn-error btn-sm h-11 rounded-xl font-bold gap-1.5 shadow-xs active:scale-95 transition-all text-xs sm:text-sm flex-1 sm:flex-none text-white flex items-center justify-center"
-                                    >
-                                        <Download className="w-4 h-4" />
-                                        Descargar PDF
-                                    </span>
-                                )
-                            )}
-                        </PDFDownloadLink>
+                        <Suspense fallback={
+                            <span className="btn btn-error btn-sm h-11 rounded-xl font-bold gap-1.5 shadow-xs transition-all text-xs sm:text-sm flex-1 sm:flex-none text-white pointer-events-none opacity-70 flex items-center justify-center">
+                                <Download className="w-4 h-4" />
+                                Cargando...
+                            </span>
+                        }>
+                            <PDFDownloadLink
+                                key={fullPreparedOrder?.order_items?.map((i) => i.photos?.map((p) => p.dataUrl || p.id).join('-')).join('_') || 'pdf-loading'}
+                                document={<OrderServicePDF order={fullPreparedOrder || order} itemPhotosMap={resolvedItemPhotos} />}
+                                fileName={`service_orden_${order?.folio || 'servicio'}.pdf`}
+                            >
+                                {({ blob, url, loading, error }) => (
+                                    loading ? (
+                                        <span
+                                            className="btn btn-error btn-sm h-11 rounded-xl font-bold gap-1.5 shadow-xs transition-all text-xs sm:text-sm flex-1 sm:flex-none text-white pointer-events-none opacity-70 flex items-center justify-center"
+                                        >
+                                            <Download className="w-4 h-4" />
+                                            Cargando...
+                                        </span>
+                                    ) : (
+                                        <span
+                                            className="btn btn-error btn-sm h-11 rounded-xl font-bold gap-1.5 shadow-xs active:scale-95 transition-all text-xs sm:text-sm flex-1 sm:flex-none text-white flex items-center justify-center"
+                                        >
+                                            <Download className="w-4 h-4" />
+                                            Descargar PDF
+                                        </span>
+                                    )
+                                )}
+                            </PDFDownloadLink>
+                        </Suspense>
 
                         {customer?.phone && (
                             <button

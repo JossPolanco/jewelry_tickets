@@ -15,26 +15,41 @@ export default defineConfig({
     },
     base: process.env.VITE_BASE_PATH || '/',
     build: {
-        chunkSizeWarningLimit: 1000,
+        chunkSizeWarningLimit: 600,
         rollupOptions: {
             output: {
                 manualChunks(id) {
-                    if (id.includes('src/utils/supabase') || id.includes('src\\utils\\supabase')) {
-                        return 'supabase-config';
+                    // @react-pdf y sus dependencias pesadas (fontkit, linebreak, unicode-trie)
+                    // se separan en su propio chunk para NO contaminar vendor-react
+                    if (id.includes('@react-pdf') || id.includes('fontkit') || id.includes('linebreak') || id.includes('unicode-properties') || id.includes('unicode-trie') || id.includes('restructure')) {
+                        return 'vendor-pdf';
+                    }
+                    // Librería de iconos personalizada reicon-react
+                    if (id.includes('reicon-react')) {
+                        return 'vendor-icons-reicon';
                     }
                     if (id.includes('node_modules')) {
                         if (id.includes('lucide-react')) {
-                            return 'vendor-icons'
+                            return 'vendor-icons';
                         }
                         if (id.includes('@tanstack')) {
-                            return 'vendor-query'
+                            return 'vendor-query';
                         }
-                        if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-                            return 'vendor-react'
+                        if (id.includes('@supabase')) {
+                            return 'vendor-supabase';
+                        }
+                        // Solo react, react-dom y react-router (NO @react-pdf)
+                        if (
+                            id.includes('/node_modules/react/') ||
+                            id.includes('/node_modules/react-dom/') ||
+                            id.includes('/node_modules/react-router/') ||
+                            id.includes('/node_modules/scheduler/')
+                        ) {
+                            return 'vendor-react';
                         }
                     }
                 }
             }
         }
     }
-})
+})
