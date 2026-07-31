@@ -31,7 +31,7 @@ const OrderServicePDF = lazy(() => import('../../utils/pdfs/OrderServicePDF'));
 // ESTADOS DE ORDEN DISPONIBLES
 const ORDER_STATUS_OPTIONS = [
     'Recibido',
-    'En proceso',
+    'En Proceso',
     'Pendiente',
     'Reparación',
     'Listo',
