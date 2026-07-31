@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Phone, Mail, X, Loader2, Search, CheckCircle2, ChevronRight, UserCheck } from 'lucide-react';
-import { searchClient } from '@/services/clients/clientService';
+import { searchClient, getClientById } from '@/services/clients/clientService';
 import { useUser } from '@/utils/context/UserContext';
 import { useQuery } from '@tanstack/react-query';
 import { useFormContext } from 'react-hook-form';
@@ -20,7 +20,21 @@ export default function StepClient() {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef(null);
 
+    // RECUPERA EL CLIENTE SI EXISTE UN CUSTOMER_ID (POR EJEMPLO DESDE UN BORRADOR)
+    useEffect(() => {
+        if (currentCustomerId && !selectedClient) {
+            getClientById(currentCustomerId).then((client) => {
+                if (client) {
+                    const clientName = client.full_name || `${client.names || ''} ${client.lastnames || ''}`.trim();
+                    setSelectedClient(client);
+                    setSearchTerm(clientName);
+                }
+            }).catch((err) => console.warn("No se pudo cargar el cliente del borrador:", err));
+        }
+    }, [currentCustomerId, selectedClient]);
+
     // CIERRA EL DROPDOWN CUANDO SE HACE CLICK FUERA DEL COMPONENTE
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (containerRef.current && !containerRef.current.contains(event.target)) {

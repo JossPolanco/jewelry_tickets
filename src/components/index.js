@@ -8,6 +8,8 @@ export { default as Toast } from './Toast';
 // IMGAGES COMPONENTS
 export { default as GalleryPanel } from './images/GalleryPanel'
 export { default as UploadPanel } from './images/UploadPanel'
+export { default as CameraModal } from './images/CameraModal'
+
 
 // CLIENTS COMPONENTS
 export { default as ClientsTable } from './clients/ClientsTable'

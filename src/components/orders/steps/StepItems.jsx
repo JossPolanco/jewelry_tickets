@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ITEM_TYPES, SERVICE_TYPES } from '@/utils';
 import { Memo } from 'reicon-react';
 import Modal from '@/components/Modal';
+import CameraModal from '@/components/images/CameraModal';
 import { useImageUpload } from '@/hooks/images/useImageUpload';
 import { getImageById, deleteImageMetadata } from '@/services/images/imageMetadata';
 import { deleteImage, BUCKETS } from '@/services/images/imageUploader';
@@ -16,6 +17,7 @@ function ItemPhotoManager({ photos = [], onChangePhotos }) {
     const { user } = useUser();
     const [loadingUser, setLoadingUser] = useState(null);
     const [deletingId, setDeletingId] = useState(null);
+    const [isCameraOpen, setIsCameraOpen] = useState(false);
     const fileInputRef = useRef(null);
 
     const { upload, state, reset } = useImageUpload({
@@ -45,11 +47,7 @@ function ItemPhotoManager({ photos = [], onChangePhotos }) {
         }
     });
 
-    const handleFileChange = async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        e.target.value = '';
-
+    const getTargetUserId = async () => {
         let targetUserId = user?.id || loadingUser?.id;
         if (!targetUserId) {
             try {
@@ -58,12 +56,26 @@ function ItemPhotoManager({ photos = [], onChangePhotos }) {
                 setLoadingUser(curUser);
             } catch (err) {
                 console.error("No se pudo identificar al usuario para subir la imagen:", err);
-                return;
+                return null;
             }
         }
+        return targetUserId;
+    };
 
+    const handleFileChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        e.target.value = '';
+
+        const targetUserId = await getTargetUserId();
         if (!targetUserId) return;
         upload(file, targetUserId);
+    };
+
+    const handleCameraCapture = async (capturedFile) => {
+        const targetUserId = await getTargetUserId();
+        if (!targetUserId) return;
+        upload(capturedFile, targetUserId);
     };
 
     const handleDeletePhoto = async (photoToDelete) => {
@@ -140,24 +152,40 @@ function ItemPhotoManager({ photos = [], onChangePhotos }) {
                 ))}
 
                 {photos.length < 2 && (
-                    <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isUploading}
-                        className={`border-2 border-dashed border-base-300 hover:border-primary/60 rounded-xl p-3 flex flex-col items-center justify-center gap-1.5 text-base-content/60 hover:text-primary transition-all aspect-video min-h-24 ${isUploading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-primary/5'}`}
-                    >
+                    <div className="border-2 border-dashed border-base-300 rounded-xl p-2.5 flex flex-col items-center justify-center gap-1.5 aspect-video min-h-24 bg-base-100/50">
                         {isUploading ? (
-                            <>
-                                <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                                <span className="text-[11px] font-medium text-primary">Subiendo... ({state.progress}%)</span>
-                            </>
+                            <div className="flex flex-col items-center justify-center gap-1 text-primary">
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                <span className="text-[11px] font-medium">Subiendo... ({state.progress}%)</span>
+                            </div>
                         ) : (
                             <>
-                                <Plus className="w-5 h-5 text-primary" />
-                                <span className="text-[11px] font-bold">Añadir Foto ({photos.length}/2)</span>
+                                <span className="text-[11px] font-bold text-base-content/70 mb-0.5">
+                                    Añadir Foto #{photos.length + 1}
+                                </span>
+                                <div className="flex flex-wrap items-center justify-center gap-1.5 w-full">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsCameraOpen(true)}
+                                        className="btn btn-primary btn-xs rounded-lg font-bold gap-1 shadow-xs active:scale-95 transition-all text-[11px]"
+                                        title="Tomar foto con la cámara en vivo"
+                                    >
+                                        <Camera className="w-3 h-3" />
+                                        Cámara
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="btn btn-outline btn-xs rounded-lg font-bold gap-1 text-base-content/70 hover:text-primary active:scale-95 transition-all text-[11px]"
+                                        title="Seleccionar de la galería de imágenes"
+                                    >
+                                        <ImageIcon className="w-3 h-3" />
+                                        Galería
+                                    </button>
+                                </div>
                             </>
                         )}
-                    </button>
+                    </div>
                 )}
             </div>
 
@@ -166,9 +194,18 @@ function ItemPhotoManager({ photos = [], onChangePhotos }) {
                     <span>{state.error || "Error al subir la imagen"}</span>
                 </div>
             )}
+
+            {/* MODAL DE CÁMARA EN VIVO WEBRTC */}
+            <CameraModal
+                isOpen={isCameraOpen}
+                onClose={() => setIsCameraOpen(false)}
+                onCapture={handleCameraCapture}
+                onUseFileFallback={() => fileInputRef.current?.click()}
+            />
         </div>
     );
 }
+
 
 export default function StepItems() {
     const { control, formState: { errors }, clearErrors, setValue } = useFormContext();

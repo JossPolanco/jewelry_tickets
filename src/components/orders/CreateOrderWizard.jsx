@@ -1,4 +1,5 @@
-import { User, Package, DollarSign, PenTool, ChevronLeft, ChevronRight, Save } from 'lucide-react';
+import { User, Package, DollarSign, PenTool, ChevronLeft, ChevronRight, Save, RotateCcw, FileText } from 'lucide-react';
+
 import { useForm, FormProvider } from 'react-hook-form';
 import { useUser } from '@/utils/context/UserContext';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -41,8 +42,11 @@ const STEPS = [
     { id: 4, label: 'FIRMA', icon: PenTool },
 ];
 
+const ORDER_WIZARD_DRAFT_KEY = "order_wizard_draft_v1";
+
 export default function CreateOrderWizard({ onClose, showToast }) {
     const [currentStep, setCurrentStep] = useState(1);
+    const [restoredFromDraft, setRestoredFromDraft] = useState(false);
     const { organization } = useUser();
     const queryClient = useQueryClient();
 
@@ -62,7 +66,76 @@ export default function CreateOrderWizard({ onClose, showToast }) {
         }
     });
 
-    const { handleSubmit, trigger, setValue, reset } = methods;
+    const { handleSubmit, trigger, setValue, reset, watch, getValues } = methods;
+
+    // CARGA DE BORRADOR GUARDADO EN LOCALSTORAGE AL MONTAR
+    useEffect(() => {
+        try {
+            const savedDraft = localStorage.getItem(ORDER_WIZARD_DRAFT_KEY);
+            if (savedDraft) {
+                const parsed = JSON.parse(savedDraft);
+                if (parsed?.formValues) {
+                    reset(parsed.formValues);
+                    if (parsed.currentStep) {
+                        setCurrentStep(parsed.currentStep);
+                    }
+                    setRestoredFromDraft(true);
+                }
+            }
+        } catch (e) {
+            console.warn("No se pudo cargar el borrador de la orden:", e);
+        }
+    }, [reset]);
+
+    // GUARDADO AUTOMÁTICO DEL BORRADOR AL CAMBIAR CAMPOS O PASOS
+    useEffect(() => {
+        const subscription = watch((value) => {
+            if (value && (value.customer_id || (value.items && value.items.length > 0))) {
+                const draftPayload = {
+                    currentStep,
+                    formValues: value,
+                    timestamp: Date.now(),
+                };
+                localStorage.setItem(ORDER_WIZARD_DRAFT_KEY, JSON.stringify(draftPayload));
+            }
+        });
+        return () => subscription.unsubscribe();
+    }, [watch, currentStep]);
+
+    useEffect(() => {
+        const curValues = getValues();
+        if (curValues && (curValues.customer_id || (curValues.items && curValues.items.length > 0))) {
+            const draftPayload = {
+                currentStep,
+                formValues: curValues,
+                timestamp: Date.now(),
+            };
+            localStorage.setItem(ORDER_WIZARD_DRAFT_KEY, JSON.stringify(draftPayload));
+        }
+    }, [currentStep, getValues]);
+
+    const handleClearDraft = () => {
+        try {
+            localStorage.removeItem(ORDER_WIZARD_DRAFT_KEY);
+        } catch (e) {}
+        reset({
+            organization_id: organization?.organization_id || "",
+            customer_id: "",
+            folio: "",
+            status: "Pendiente",
+            total_estimated_cost: 0.00,
+            advance_payment: 0.00,
+            signature_data: null,
+            notes_general: "Sin observaciones",
+            promised_date: "",
+            items: [],
+        });
+        setCurrentStep(1);
+        setRestoredFromDraft(false);
+        if (showToast) {
+            showToast("Borrador descartado correctamente", "info");
+        }
+    };
 
     useEffect(() => {
         if (organization?.organization_id) {
@@ -93,6 +166,10 @@ export default function CreateOrderWizard({ onClose, showToast }) {
     const saveOrderMutation = useMutation({
         mutationFn: createOrder,
         onSuccess: () => {
+            try {
+                localStorage.removeItem(ORDER_WIZARD_DRAFT_KEY);
+            } catch (e) {}
+
             if (showToast) {
                 showToast("Orden guardada exitosamente", "success");
             }
@@ -100,6 +177,7 @@ export default function CreateOrderWizard({ onClose, showToast }) {
             queryClient.invalidateQueries(['homeDashboard']);
             reset();
             setCurrentStep(1);
+            setRestoredFromDraft(false);
             if (onClose) {
                 onClose();
             }
@@ -110,6 +188,7 @@ export default function CreateOrderWizard({ onClose, showToast }) {
             }
         },
     });
+
 
     const onSubmit = (data) => {
         saveOrderMutation.mutate(data);
@@ -140,8 +219,30 @@ export default function CreateOrderWizard({ onClose, showToast }) {
         <div className="w-full flex flex-col space-y-6">
             <FormProvider {...methods}>
                 <div className="w-full flex flex-col space-y-6">
+                    {/* Banner de Borrador Restaurado */}
+                    {restoredFromDraft && (
+                        <div className="bg-info/10 border border-info/30 rounded-xl p-2.5 sm:p-3 flex items-center justify-between gap-2 shadow-2xs animate-fade-in text-xs">
+                            <div className="flex items-center gap-2 text-info min-w-0">
+                                <FileText className="w-4 h-4 shrink-0" />
+                                <span className="font-semibold text-base-content/90 truncate">
+                                    Se ha restaurado automáticamente tu borrador en progreso.
+                                </span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleClearDraft}
+                                className="btn btn-ghost btn-xs text-error hover:bg-error/10 gap-1 rounded-lg shrink-0 font-bold"
+                                title="Limpiar datos y empezar orden en blanco"
+                            >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                                Descartar borrador
+                            </button>
+                        </div>
+                    )}
+
                     {/* Stepper Header */}
                     <div className="w-full">
+
                         <ul className="steps steps-horizontal w-full text-xs sm:text-sm font-medium">
                             {STEPS.map((step) => {
                                 const Icon = step.icon;

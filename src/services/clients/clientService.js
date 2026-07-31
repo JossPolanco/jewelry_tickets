@@ -70,6 +70,22 @@ export async function searchClient({ organization_id, search }) {
     return data || [];
 }
 
+export async function getClientById(id) {
+    if (!id) return null;
+    const { data, error } = await supabaseClient
+        .from("tbl_customers")
+        .select("full_name, names, lastnames, phone, email, id")
+        .eq("id", id)
+        .maybeSingle();
+
+    if (error) {
+        console.error("Error al obtener cliente por ID:", error);
+        throw error;
+    }
+    return data;
+}
+
+
 export async function createClient({ organization_id, names, lastnames, phone, client_phone, email, client_email }) {
     const phoneVal = phone !== undefined ? phone : client_phone;
     const emailVal = email !== undefined ? email : client_email;
