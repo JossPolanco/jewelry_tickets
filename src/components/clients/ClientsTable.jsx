@@ -438,7 +438,7 @@ export default function ClientsTable() {
                 {selectedClient && (
                     <div className="space-y-5 pt-2">
                         {/* CABECERA CON AVATAR E IDENTIFICADOR DEL CLIENTE */}
-                        <div className="flex items-center gap-4 p-4 rounded-2xl bg-base-100 border border-base-200">
+                        <div className="flex items-center gap-4 p-4 rounded-2xl bg-base-100 border border-base-200 select-none">
                             <div className="w-14 h-14 rounded-2xl bg-primary text-primary-content font-bold text-xl flex items-center justify-center shadow-sm shrink-0">
                                 {getInitials(selectedClient.names, selectedClient.lastnames)}
                             </div>
@@ -459,14 +459,14 @@ export default function ClientsTable() {
 
                         {/* GRID CON INFORMACIÓN DEL CLIENTE */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div className="p-3.5 rounded-xl bg-base-100 border border-base-200 space-y-1">
+                            <div className="p-3.5 rounded-xl bg-base-100 border border-base-200 space-y-1 select-none">
                                 <span className="text-xs text-base-content/60 font-medium flex items-center gap-1.5">
                                     <User className="w-3.5 h-3.5 text-primary" /> Nombres
                                 </span>
                                 <p className="text-sm font-semibold text-base-content">{selectedClient.names || '—'}</p>
                             </div>
 
-                            <div className="p-3.5 rounded-xl bg-base-100 border border-base-200 space-y-1">
+                            <div className="p-3.5 rounded-xl bg-base-100 border border-base-200 space-y-1 select-none">
                                 <span className="text-xs text-base-content/60 font-medium flex items-center gap-1.5">
                                     <User className="w-3.5 h-3.5 text-primary" /> Apellidos
                                 </span>
@@ -474,7 +474,7 @@ export default function ClientsTable() {
                             </div>
 
                             <div className="p-3.5 rounded-xl bg-base-100 border border-base-200 space-y-1">
-                                <span className="text-xs text-base-content/60 font-medium flex items-center gap-1.5">
+                                <span className="text-xs text-base-content/60 font-medium flex items-center gap-1.5 select-none">
                                     <Phone className="w-3.5 h-3.5 text-primary" /> Teléfono / WhatsApp
                                 </span>
                                 <div className="flex items-center justify-between">
@@ -494,7 +494,7 @@ export default function ClientsTable() {
                             </div>
 
                             <div className="p-3.5 rounded-xl bg-base-100 border border-base-200 space-y-1">
-                                <span className="text-xs text-base-content/60 font-medium flex items-center gap-1.5">
+                                <span className="text-xs text-base-content/60 font-medium flex items-center gap-1.5 select-none">
                                     <Mail className="w-3.5 h-3.5 text-primary" /> Correo Electrónico
                                 </span>
                                 <p className="text-sm font-semibold text-base-content truncate">{selectedClient.email || '—'}</p>

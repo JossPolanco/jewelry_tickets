@@ -19,7 +19,7 @@ const Modal = forwardRef(function Modal({ className = '', modalTitle, modalSubti
             <div className={`modal-box w-full sm:w-11/12 max-w-5xl max-h-[78dvh] sm:max-h-[85vh] flex flex-col rounded-2xl sm:rounded-3xl border border-base-300/60 bg-base-100 p-0 shadow-2xl overflow-hidden m-auto ${className}`}>
                 {/* Header Fijo */}
                 <div className="flex items-center justify-between w-full px-4 sm:px-6 py-3 sm:py-3.5 border-b border-base-200 shrink-0 bg-base-100 z-10">   
-                    <div className="pr-2 space-y-0.5 min-w-0">
+                    <div className="pr-2 space-y-0.5 min-w-0 select-none">
                         {modalTitle && (
                             <h4 id={titleId} className="text-sm sm:text-base font-bold text-base-content leading-tight truncate">
                                 {modalTitle}
@@ -59,4 +59,4 @@ const Modal = forwardRef(function Modal({ className = '', modalTitle, modalSubti
 });
 
 export default Modal;
-
+
