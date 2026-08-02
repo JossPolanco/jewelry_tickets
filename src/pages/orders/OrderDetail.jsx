@@ -3,18 +3,18 @@ import {
     Clock, AlertCircle, Plus, Trash2, Camera, Loader2, X, Send, RefreshCw, PenTool, ShieldCheck, Image as ImageIcon,
     Receipt, ChevronDown, ChevronUp, CreditCard
 } from 'lucide-react';
-import { getOrderDetail, getOrderItems, updateOrder, updateOrderItem, createOrderItem, deleteOrderItem } from '@/services/orders';
+import { getOrderDetail, getOrderItems, updateOrder, updateOrderItem, createOrderItem, deleteOrderItem, getTermsAndConditions } from '@/services/orders';
 import { getPaymentsByOrderId, createPayment, deletePayment } from '@/services/payments';
 import { getImageById, deleteImageMetadata } from '@/services/images/imageMetadata';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { deleteImage, BUCKETS } from '@/services/images/imageUploader';
+import { ITEM_TYPES, SERVICE_TYPES, formatDate } from '@/utils';
 import { useImageUpload } from '@/hooks/images/useImageUpload';
 import { getCurrentUser } from '@/services/user/userService';
 import { getSignedUrl } from '@/services/images/imageUrl';
-import React, { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useUser } from '@/utils/context/UserContext';
-import { ITEM_TYPES, SERVICE_TYPES, formatDate } from '@/utils';
 import { Download } from 'reicon-react';
 import Modal from '@/components/Modal';
 import Toast from '@/components/Toast';
@@ -325,7 +325,7 @@ export default function OrderDetail() {
     const editItemModalRef = useRef(null);
     const addPaymentModalRef = useRef(null);
 
-    const { user } = useUser();
+    const { user, organization } = useUser();
     const [showPaymentsHistory, setShowPaymentsHistory] = useState(false);
     const [paymentForm, setPaymentForm] = useState({
         amount: '',
@@ -428,6 +428,16 @@ export default function OrderDetail() {
     const order = orderData || null;
     const items = orderItemsData || orderData?.order_items || [];
     const customer = order?.tbl_customers || null;
+
+    // ID DE ORGANIZACIÓN (Viene del contexto de usuario o de la orden de servicio)
+    const targetOrgId = organization?.organization_id || order?.organization_id;
+
+    // TRAER CONDICIONES DE LA ORGANIZACIÓN
+    const { data: termsAndConditions } = useQuery({
+        queryKey: ['termsAndConditions', targetOrgId],
+        queryFn: () => getTermsAndConditions(targetOrgId),
+        enabled: !!targetOrgId
+    });
 
     // RESOLVER FOTOS CON URLs FIRMADAS AL CARGAR ÍTEMS
     useEffect(() => {
@@ -722,7 +732,7 @@ export default function OrderDetail() {
     // GENERAR MENSAJE DE WHATSAPP CON EL RECIBO DE LA ORDEN
     const handleSendWhatsApp = () => {
         if (!customer?.phone) {
-            showToast('El cliente no tiene número de teléfono registrado', 'error');
+            showToast('El cliente no tiene número de teléfono registrado o es incorrecto', 'error');
             return;
         }
 
@@ -737,7 +747,7 @@ export default function OrderDetail() {
             `¡Gracias por tu confianza!`;
 
         const encodedMsg = encodeURIComponent(message);
-        window.open(`https://wa.me/${cleanPhone}?text=${encodedMsg}`, '_blank');
+        window.open(`https://wa.me/${cleanPhone}`, '_blank');
     };
 
     const handleDownloadPdf = () => {
@@ -839,9 +849,9 @@ export default function OrderDetail() {
                             </span>
                         }>
                             <PDFDownloadLink
-                                key={fullPreparedOrder?.order_items?.map((i) => i.photos?.map((p) => p.dataUrl || p.id).join('-')).join('_') || 'pdf-loading'}
-                                document={<OrderServicePDF order={fullPreparedOrder || order} itemPhotosMap={resolvedItemPhotos} />}
-                                fileName={`service_orden_${order?.folio || 'servicio'}.pdf`}
+                                key={`${fullPreparedOrder?.order_items?.map((i) => i.photos?.map((p) => p.dataUrl || p.id).join('-')).join('_') || 'pdf'}_${termsAndConditions?.terms_and_conditions ? 'terms' : 'noterms'}`}
+                                document={<OrderServicePDF order={fullPreparedOrder || order} itemPhotosMap={resolvedItemPhotos} termsAndConditions={termsAndConditions?.terms_and_conditions} />}
+                                fileName={`Orden_${order?.folio || 'servicio'}.pdf`}
                             >
                                 {({ blob, url, loading, error }) => (
                                     loading ? (

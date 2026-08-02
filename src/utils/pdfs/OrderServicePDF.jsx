@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     }
 });
 
-export default function OrderServicePDF({ order, itemPhotosMap = {} }) {
+export default function OrderServicePDF({ order, itemPhotosMap = {}, termsAndConditions }) {
     if (!order) return null;
 
     const items = order.order_items || order.items || [];
@@ -509,7 +509,7 @@ export default function OrderServicePDF({ order, itemPhotosMap = {} }) {
                 {/* PIE DE PÁGINA, TÉRMINOS Y FIRMA DEL CLIENTE */}
                 <View style={styles.footerArea} wrap={false}>
                     <Text style={styles.termsNotice}>
-                        * IMPORTANTE: Presentar este comprobante para recoger la(s) pieza(s). Las fechas de entrega son estimadas. Transcurridos 30 días naturales no nos hacemos responsables por piezas no reclamadas.
+                        {termsAndConditions}
                     </Text>
 
                     <View style={styles.signatureBlock}>
