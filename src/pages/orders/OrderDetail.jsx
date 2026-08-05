@@ -6,13 +6,13 @@ import {
 import { getOrderDetail, getOrderItems, updateOrder, updateOrderItem, createOrderItem, deleteOrderItem, getTermsAndConditions } from '@/services/orders';
 import { getPaymentsByOrderId, createPayment, deletePayment } from '@/services/payments';
 import { getImageById, deleteImageMetadata } from '@/services/images/imageMetadata';
+import { getCurrentUser, getOrganizationInfo } from '@/services/user/userService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { deleteImage, BUCKETS } from '@/services/images/imageUploader';
 import { ITEM_TYPES, SERVICE_TYPES, formatDate } from '@/utils';
 import { useImageUpload } from '@/hooks/images/useImageUpload';
 import DeliveryModal from '@/components/orders/DeliveryModal';
-import { getCurrentUser } from '@/services/user/userService';
 import { getSignedUrl } from '@/services/images/imageUrl';
 import { useParams, useNavigate } from 'react-router';
 import { useUser } from '@/utils/context/UserContext';
@@ -439,6 +439,13 @@ export default function OrderDetail() {
     const { data: termsAndConditions } = useQuery({
         queryKey: ['termsAndConditions', targetOrgId],
         queryFn: () => getTermsAndConditions(targetOrgId),
+        enabled: !!targetOrgId
+    });
+
+    // TRAER INFORMACIÓN DE LA ORGANIZACIÓN
+    const { data: organizationInfo } = useQuery({
+        queryKey: ['organizationInfo', targetOrgId],
+        queryFn: () => getOrganizationInfo(targetOrgId),
         enabled: !!targetOrgId
     });
 
@@ -898,8 +905,15 @@ export default function OrderDetail() {
                             </span>
                         }>
                             <PDFDownloadLink
-                                key={`${fullPreparedOrder?.order_items?.map((i) => i.photos?.map((p) => p.dataUrl || p.id).join('-')).join('_') || 'pdf'}_${termsAndConditions?.terms_and_conditions ? 'terms' : 'noterms'}`}
-                                document={<OrderServicePDF order={fullPreparedOrder || order} itemPhotosMap={resolvedItemPhotos} termsAndConditions={termsAndConditions?.terms_and_conditions} />}
+                                key={`${fullPreparedOrder?.order_items?.map((i) => i.photos?.map((p) => p.dataUrl || p.id).join('-')).join('_') || 'pdf'}_${termsAndConditions?.terms_and_conditions ? 'terms' : 'noterms'}_${organizationInfo?.name || 'noorg'}`}
+                                document={
+                                    <OrderServicePDF
+                                        order={fullPreparedOrder || order}
+                                        itemPhotosMap={resolvedItemPhotos}
+                                        termsAndConditions={termsAndConditions?.terms_and_conditions}
+                                        organizationInfo={organizationInfo}
+                                    />
+                                }
                                 fileName={`Orden_${order?.folio || 'servicio'}.pdf`}
                             >
                                 {({ blob, url, loading, error }) => (

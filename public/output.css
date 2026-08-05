@@ -2909,6 +2909,9 @@
   .max-h-\[85vh\] {
     max-height: 85vh;
   }
+  .min-h-11 {
+    min-height: calc(var(--spacing) * 11);
+  }
   .min-h-17\.5 {
     min-height: calc(var(--spacing) * 17.5);
   }
@@ -2921,17 +2924,11 @@
   .min-h-75 {
     min-height: calc(var(--spacing) * 75);
   }
-  .min-h-\[44px\] {
-    min-height: 44px;
-  }
   .min-h-\[60vh\] {
     min-height: 60vh;
   }
   .min-h-\[80vh\] {
     min-height: 80vh;
-  }
-  .min-h-\[96px\] {
-    min-height: 96px;
   }
   .min-h-screen {
     min-height: 100vh;
@@ -3083,9 +3080,6 @@
   }
   .min-w-0 {
     min-width: 0px;
-  }
-  .min-w-\[44px\] {
-    min-width: 44px;
   }
   .flex-1 {
     flex: 1;
@@ -3879,6 +3873,37 @@
       --btn-bg: #0000;
       color: var(--btn-rest-fg, var(--btn-color, var(--color-base-content)));
       --btn-border: var(--btn-color, var(--color-base-content));
+      --btn-border-style: solid;
+      background-image: none;
+      --btn-inset: 0 0 0 0 oklch(0% 0 0/0);
+      --btn-shadow: 0 0 0 0 oklch(0% 0 0/0);
+    }
+    .btn-soft {
+      --btn-bg: var(--btn-color, var(--color-base-content));
+    }
+    @supports (color: color-mix(in lab, red, red)) {
+      .btn-soft {
+        --btn-bg: color-mix(
+      in oklab,
+      var(--btn-color, var(--color-base-content)) 8%,
+      var(--btn-soft-bg, var(--color-base-100))
+    );
+      }
+    }
+    .btn-soft {
+      color: var(--btn-rest-fg, var(--btn-color, var(--color-base-content)));
+      --btn-border: var(--btn-color, var(--color-base-content));
+    }
+    @supports (color: color-mix(in lab, red, red)) {
+      .btn-soft {
+        --btn-border: color-mix(
+      in oklab,
+      var(--btn-color, var(--color-base-content)) 10%,
+      var(--btn-soft-bg, var(--color-base-100))
+    );
+      }
+    }
+    .btn-soft {
       --btn-border-style: solid;
       background-image: none;
       --btn-inset: 0 0 0 0 oklch(0% 0 0/0);

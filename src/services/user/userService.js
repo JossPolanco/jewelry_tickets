@@ -24,7 +24,7 @@ export async function getOrganizationMember(userId = null) {
         console.error("Error al obtener la organización del usuario en Supabase:", error);
         throw error;
     }
-    
+
     return data;
 }
 
@@ -36,4 +36,18 @@ export async function getCurrentUser() {
     }
 
     return user;
+}
+
+export async function getOrganizationInfo(organizationId) {
+    const { data, error } = await supabaseClient
+        .from("tbl_organizations")
+        .select("name, phone, address")
+        .eq("id", organizationId)
+        .maybeSingle();
+
+    if (error) {
+        throw error;
+    }
+
+    return data;
 }

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/renderer';
 import {
     formatCurrency,
@@ -413,13 +412,13 @@ const styles = StyleSheet.create({
     },
 });
 
-export default function OrderServicePDF({ order, itemPhotosMap = {}, termsAndConditions }) {
+export default function OrderServicePDF({ order, itemPhotosMap = {}, termsAndConditions, organizationInfo }) {
     if (!order) {
         return (
             <Document title="Orden_Servicio.pdf">
                 <Page size="LETTER" style={styles.page}>
                     <View style={styles.headerContainer}>
-                        <Text style={styles.brandTitle}>ORDEN DE SERVICIO</Text>
+                        <Text style={styles.brandTitle}>{organizationInfo?.name || 'ORDEN DE SERVICIO'}</Text>
                     </View>
                 </Page>
             </Document>
@@ -446,7 +445,14 @@ export default function OrderServicePDF({ order, itemPhotosMap = {}, termsAndCon
                 <View style={styles.headerContainer}>
                     <View style={styles.headerLeft}>
                         <Text style={styles.brandTitle}>ORDEN DE SERVICIO</Text>
-                        <Text style={styles.brandSubtitle}>Joyería & Taller de Reparación</Text>
+                        <Text style={styles.brandSubtitle}>
+                            {organizationInfo?.name ? `${organizationInfo.name.toUpperCase()} • TALLER` : 'Joyería & Taller de Reparación'}
+                        </Text>
+                        {(organizationInfo?.address || organizationInfo?.number) ? (
+                            <Text style={{ fontSize: 7, color: '#475569', marginTop: 1 }}>
+                                {[organizationInfo?.address, organizationInfo?.number ? `Tel: ${organizationInfo.number}` : null].filter(Boolean).join(' | ')}
+                            </Text>
+                        ) : null}
                     </View>
                     <View style={styles.headerRight}>
                         <Text style={styles.folioText}>Folio: {formatFolio(order.folio)}</Text>
@@ -480,6 +486,18 @@ export default function OrderServicePDF({ order, itemPhotosMap = {}, termsAndCon
 
                     <View style={styles.card}>
                         <Text style={styles.cardTitle}>Información del Servicio</Text>
+                        {organizationInfo?.name ? (
+                            <View style={styles.infoRow}>
+                                <Text style={styles.infoLabel}>Taller / Empresa:</Text>
+                                <Text style={styles.infoValue}>{organizationInfo.name}</Text>
+                            </View>
+                        ) : null}
+                        {organizationInfo?.number ? (
+                            <View style={styles.infoRow}>
+                                <Text style={styles.infoLabel}>Tel. Taller:</Text>
+                                <Text style={styles.infoValue}>{organizationInfo.number}</Text>
+                            </View>
+                        ) : null}
                         <View style={styles.infoRow}>
                             <Text style={styles.infoLabel}>Fecha Recepción:</Text>
                             <Text style={styles.infoValue}>{formatDate(order.created_at)}</Text>
@@ -640,7 +658,14 @@ export default function OrderServicePDF({ order, itemPhotosMap = {}, termsAndCon
 
                 {/* PIE DE PÁGINA INFERIOR */}
                 <View style={styles.bottomBar} fixed>
-                    <Text style={styles.bottomText}>Comprobante de Orden de Servicio - Joyería</Text>
+                    <Text style={styles.bottomText}>
+                        {[
+                            'Comprobante de Orden de Servicio',
+                            organizationInfo?.name,
+                            organizationInfo?.number ? `Tel: ${organizationInfo.number}` : null,
+                            organizationInfo?.address
+                        ].filter(Boolean).join(' • ')}
+                    </Text>
                     <Text style={styles.bottomText} render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages}`} />
                 </View>
 
