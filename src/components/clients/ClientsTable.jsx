@@ -1,9 +1,11 @@
 import {
     Search, ChevronLeft, ChevronRight, MoreVertical, Pencil, Trash2, Phone, Mail, Calendar, X, Users, RefreshCw,
-    User, Info, ExternalLink, BadgeCheck, AlertCircle, Save, Wrench
+    User, Info, ExternalLink, BadgeCheck, AlertCircle, Save, Wrench, ClipboardList
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getClients, updateClient, deleteClient } from '@/services/clients';
+import { getClientOrders } from '@/services/orders';
+import { useNavigate } from 'react-router';
 import React, { useState, useEffect, useRef } from 'react';
 import { useUser } from '@/utils/context/UserContext';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,6 +22,7 @@ const editClientSchema = z.object({
 });
 
 export default function ClientsTable() {
+    const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { organization } = useUser();
     const [search, setSearch] = useState('');
@@ -35,7 +38,46 @@ export default function ClientsTable() {
     const detailModalRef = useRef(null);
     const editModalRef = useRef(null);
     const deleteModalRef = useRef(null);
+    const ordersModalRef = useRef(null);
     const timerRef = useRef(null);
+
+    // Obtención de órdenes del cliente seleccionado
+    const { data: clientOrders = [], isLoading: isLoadingOrders } = useQuery({
+        queryKey: ['clientOrders', selectedClient?.id],
+        queryFn: () => getClientOrders(selectedClient?.id),
+        enabled: !!selectedClient?.id,
+    });
+
+    const formatCurrency = (amount) => {
+        const num = Number(amount) || 0;
+        return new Intl.NumberFormat('es-MX', {
+            style: 'currency',
+            currency: 'MXN',
+        }).format(num);
+    };
+
+    const getStatusBadgeClass = (status) => {
+        switch (status?.toLowerCase()) {
+            case 'recibido':
+                return 'badge-info bg-info/10 text-info border-info/20';
+            case 'en proceso':
+                return 'badge-warning bg-warning/10 text-warning border-warning/20';
+            case 'pendiente':
+                return 'badge-warning bg-amber-500/10 text-amber-600 border-amber-500/20';
+            case 'reparacion':
+            case 'reparación':
+                return 'badge-secondary bg-secondary/10 text-secondary border-secondary/20';
+            case 'listo':
+                return 'badge-success bg-success/10 text-success border-success/20';
+            case 'entregado':
+                return 'badge-neutral bg-base-content/10 text-base-content border-base-content/20';
+            case 'cancelado':
+                return 'badge-error bg-error/10 text-error border-error/20';
+            default:
+                return 'badge-ghost bg-base-200 text-base-content/70';
+        }
+    };
+
 
     // Formulario de edición
     const {
@@ -519,15 +561,19 @@ export default function ClientsTable() {
                         <div className="flex justify-center pt-3 border-t border-base-200 gap-3">
                             <button
                                 type="button"
-                                onClick={() => { console.log("Ver notas") }}
-                                className="btn btn-primary h-11 px-6 rounded-xl text-sm font-semibold shadow-sm active:scale-95"
+                                onClick={() => {
+                                    detailModalRef.current?.close();
+                                    ordersModalRef.current?.open();
+                                }}
+                                className="btn btn-primary h-11 px-6 rounded-xl text-sm font-semibold shadow-sm active:scale-95 flex items-center gap-2"
                             >
-                                Ver servicios
+                                <ClipboardList className="w-4 h-4" />
+                                Ver Órdenes
                             </button>
                             <button
                                 type="button"
                                 onClick={() => detailModalRef.current?.close()}
-                                className="btn btn-primary h-11 px-6 rounded-xl text-sm font-semibold shadow-sm active:scale-95"
+                                className="btn btn-ghost h-11 px-6 rounded-xl text-sm font-semibold shadow-sm active:scale-95"
                             >
                                 Entendido
                             </button>
@@ -535,6 +581,116 @@ export default function ClientsTable() {
                     </div>
                 )}
             </Modal>
+
+            {/* MODAL PARA VER ÓRDENES DEL CLIENTE */}
+            <Modal
+                ref={ordersModalRef}
+                modalTitle="Órdenes de Servicio"
+                modalSubtitle={selectedClient ? `${selectedClient.full_name || `${selectedClient.names || ''} ${selectedClient.lastnames || ''}`.trim()}` : ''}
+                className="max-w-3xl"
+            >
+                {selectedClient && (
+                    <div className="space-y-4 pt-2">
+                        {isLoadingOrders ? (
+                            <div className="flex flex-col items-center justify-center py-12 text-base-content/60 gap-3">
+                                <span className="loading loading-spinner loading-lg text-primary"></span>
+                                <p className="text-sm font-medium">Cargando órdenes del cliente...</p>
+                            </div>
+                        ) : clientOrders.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-12 text-center text-base-content/60 gap-2 border border-dashed border-base-300 rounded-2xl p-6">
+                                <ClipboardList className="w-12 h-12 text-base-content/30 mb-2" />
+                                <p className="text-base font-semibold text-base-content">Sin órdenes registradas</p>
+                                <p className="text-xs text-base-content/60">Este cliente aún no tiene órdenes de servicio asociadas.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+                                <div className="flex items-center justify-between text-xs text-base-content/60 px-1 select-none">
+                                    <span>Total de órdenes: <strong className="text-base-content">{clientOrders.length}</strong></span>
+                                    <span>Haz clic en una orden para ver sus detalles</span>
+                                </div>
+                                {clientOrders.map((order) => (
+                                    <div
+                                        key={order.id}
+                                        onClick={() => {
+                                            ordersModalRef.current?.close();
+                                            navigate(`/service-orders/detail/${order.id}`);
+                                        }}
+                                        className="group p-4 rounded-2xl bg-base-100 border border-base-200 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                                    >
+                                        <div className="space-y-2 flex-1">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <span className="font-mono font-bold text-sm text-primary bg-primary/10 px-2.5 py-0.5 rounded-lg border border-primary/20">
+                                                    #{order.folio || order.id.slice(0, 8)}
+                                                </span>
+                                                <span className={`badge ${getStatusBadgeClass(order.status)} font-semibold text-xs py-2 px-3 border capitalize`}>
+                                                    {order.status || 'Sin Estado'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-4 text-xs text-base-content/70 flex-wrap">
+                                                <span className="flex items-center gap-1">
+                                                    <Calendar className="w-3.5 h-3.5 text-base-content/50" />
+                                                    Creada: {order.created_at ? formatDate(order.created_at) : '—'}
+                                                </span>
+                                                {order.promised_date && (
+                                                    <span className="flex items-center gap-1">
+                                                        <Calendar className="w-3.5 h-3.5 text-warning" />
+                                                        Prometida: {formatDate(order.promised_date)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {order.notes_general && (
+                                                <p className="text-xs text-base-content/60 line-clamp-1 italic">
+                                                    "{order.notes_general}"
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        <div className="flex items-center justify-between sm:justify-end gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-base-200">
+                                            <div className="text-right select-none">
+                                                <span className="text-[11px] text-base-content/50 block font-medium">Costo Estimado</span>
+                                                <span className="text-sm font-bold text-base-content block">
+                                                    {formatCurrency(order.total_estimated_cost)}
+                                                </span>
+                                                {order.advance_payment > 0 && (
+                                                    <span className="text-[11px] text-success block font-medium">
+                                                        Anticipo: {formatCurrency(order.advance_payment)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="w-8 h-8 rounded-full bg-base-200 group-hover:bg-primary group-hover:text-primary-content text-base-content/60 flex items-center justify-center transition-colors">
+                                                <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="flex justify-between items-center pt-3 border-t border-base-200">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    ordersModalRef.current?.close();
+                                    detailModalRef.current?.open();
+                                }}
+                                className="btn btn-ghost btn-sm text-xs rounded-xl gap-1 text-base-content/70"
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                                Volver a Info Cliente
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => ordersModalRef.current?.close()}
+                                className="btn btn-primary btn-sm px-5 rounded-xl text-xs font-semibold shadow-sm active:scale-95"
+                            >
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
+
 
             {/* MODAL PARA EDITAR CLIENTE */}
             <Modal

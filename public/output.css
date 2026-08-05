@@ -2766,6 +2766,12 @@
       font-weight: 600;
     }
   }
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
   .block {
     display: block;
   }
@@ -2899,6 +2905,9 @@
   }
   .max-h-108 {
     max-height: calc(var(--spacing) * 108);
+  }
+  .max-h-\[60vh\] {
+    max-height: 60vh;
   }
   .max-h-\[75vh\] {
     max-height: 75vh;
@@ -4148,6 +4157,9 @@
   .text-left {
     text-align: left;
   }
+  .text-right {
+    text-align: right;
+  }
   .font-mono {
     font-family: var(--font-mono);
   }
@@ -4785,8 +4797,14 @@
       --tw-scale-z: 105%;
       scale: var(--tw-scale-x) var(--tw-scale-y);
     }
+    .group-hover\:bg-primary:is(:where(.group):hover *) {
+      background-color: var(--color-primary);
+    }
     .group-hover\:text-primary:is(:where(.group):hover *) {
       color: var(--color-primary);
+    }
+    .group-hover\:text-primary-content:is(:where(.group):hover *) {
+      color: var(--color-primary-content);
     }
     .group-hover\:text-secondary:is(:where(.group):hover *) {
       color: var(--color-secondary);
@@ -4847,6 +4865,14 @@
     @supports (color: color-mix(in lab, red, red)) {
       .hover\:border-primary\/40:hover {
         border-color: color-mix(in oklab, var(--color-primary) 40%, transparent);
+      }
+    }
+    .hover\:border-primary\/50:hover {
+      border-color: var(--color-primary);
+    }
+    @supports (color: color-mix(in lab, red, red)) {
+      .hover\:border-primary\/50:hover {
+        border-color: color-mix(in oklab, var(--color-primary) 50%, transparent);
       }
     }
     .hover\:border-primary\/60:hover {

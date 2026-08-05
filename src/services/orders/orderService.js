@@ -110,6 +110,22 @@ export async function getOrderPreview({
     };
 }
 
+export async function getClientOrders(customer_id) {
+    if (!customer_id) return [];
+    const { data, error } = await supabaseClient
+        .from("tbl_service_orders")
+        .select("*")
+        .eq("customer_id", customer_id)
+        .eq("active", true)
+        .order("created_at", { ascending: false });
+
+    if (error) {
+        throw error;
+    }
+    return data || [];
+}
+
+
 export async function recalculateOrderTotalCost(service_order_id) {
     if (!service_order_id) return 0;
     const items = await getOrderItems(service_order_id);
