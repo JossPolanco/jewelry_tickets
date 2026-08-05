@@ -3,6 +3,7 @@ import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/render
 import {
     formatCurrency,
     formatDate,
+    formatDateTime,
     formatFolio,
     getItemLabel,
     getServiceLabel,
@@ -350,17 +351,88 @@ const styles = StyleSheet.create({
     bottomText: {
         fontSize: 6.8,
         color: '#94A3B8',
-    }
+    },
+
+    // BLOQUE DE ENTREGA Y FINIQUITO
+    deliveryCard: {
+        backgroundColor: '#ECFDF5',
+        borderRadius: 5,
+        borderWidth: 1,
+        borderColor: '#10B981',
+        padding: 7,
+        marginTop: 6,
+        marginBottom: 6,
+    },
+    deliveryHeaderRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: '#A7F3D0',
+        paddingBottom: 3,
+        marginBottom: 4,
+    },
+    deliveryTitle: {
+        fontSize: 8.5,
+        fontFamily: 'Helvetica-Bold',
+        color: '#065F46',
+        letterSpacing: 0.4,
+    },
+    deliveryBadge: {
+        backgroundColor: '#059669',
+        color: '#FFFFFF',
+        fontFamily: 'Helvetica-Bold',
+        fontSize: 7,
+        paddingVertical: 2,
+        paddingHorizontal: 6,
+        borderRadius: 4,
+        textTransform: 'uppercase',
+    },
+    deliveryLegalText: {
+        fontSize: 7.2,
+        color: '#047857',
+        fontFamily: 'Helvetica',
+        lineHeight: 1.3,
+        marginBottom: 3,
+    },
+    deliveryDateText: {
+        fontSize: 7,
+        fontFamily: 'Helvetica-Bold',
+        color: '#065F46',
+    },
+    dualSignatureRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-end',
+        marginTop: 4,
+    },
+    dualSignatureBlock: {
+        width: '45%',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
 });
 
 export default function OrderServicePDF({ order, itemPhotosMap = {}, termsAndConditions }) {
-    if (!order) return null;
+    if (!order) {
+        return (
+            <Document title="Orden_Servicio.pdf">
+                <Page size="LETTER" style={styles.page}>
+                    <View style={styles.headerContainer}>
+                        <Text style={styles.brandTitle}>ORDEN DE SERVICIO</Text>
+                    </View>
+                </Page>
+            </Document>
+        );
+    }
 
     const items = order.order_items || order.items || [];
     const customer = order.tbl_customers || {};
     const customerName = `${customer.names || ''} ${customer.lastnames || ''}`.trim() || 'Cliente General';
     const statusStyle = getStatusStyle(order.status);
     const signatureUrl = convertSignatureToSvgDataUrl(order.signature_data);
+    const deliverySignatureUrl = convertSignatureToSvgDataUrl(order.delivery_signature_data);
+    const isDelivered = Boolean(order.delivered_at && order.delivery_signature_data) || order.status?.toLowerCase() === 'entregado';
 
     const totalCost = Number(order.total_estimated_cost) || 0;
     const advance = Number(order.advance_payment) || 0;
@@ -392,18 +464,18 @@ export default function OrderServicePDF({ order, itemPhotosMap = {}, termsAndCon
                             <Text style={styles.infoLabel}>Nombre:</Text>
                             <Text style={styles.infoValue}>{customerName}</Text>
                         </View>
-                        {customer.phone && (
+                        {customer.phone ? (
                             <View style={styles.infoRow}>
                                 <Text style={styles.infoLabel}>Teléfono:</Text>
                                 <Text style={styles.infoValue}>{customer.phone}</Text>
                             </View>
-                        )}
-                        {customer.email && (
+                        ) : null}
+                        {customer.email ? (
                             <View style={styles.infoRow}>
                                 <Text style={styles.infoLabel}>Correo:</Text>
                                 <Text style={styles.infoValue}>{customer.email}</Text>
                             </View>
-                        )}
+                        ) : null}
                     </View>
 
                     <View style={styles.card}>
@@ -450,16 +522,16 @@ export default function OrderServicePDF({ order, itemPhotosMap = {}, termsAndCon
                                     <Text style={styles.colPrice}>{formatCurrency(item.unit_price)}</Text>
                                 </View>
 
-                                {(item.description || photos.length > 0) && (
+                                {(item.description || photos.length > 0) ? (
                                     <View style={styles.itemDetailSection}>
-                                        {item.description && (
+                                        {item.description ? (
                                             <View style={styles.descContainer}>
                                                 <Text style={styles.descLabel}>Observaciones de la pieza:</Text>
                                                 <Text style={styles.itemDescription}>{item.description}</Text>
                                             </View>
-                                        )}
+                                        ) : null}
 
-                                        {photos.length > 0 && (
+                                        {photos.length > 0 ? (
                                             <View style={styles.evidenceContainer}>
                                                 <Text style={styles.evidenceLabel}>
                                                     Evidencia Fotográfica ({photos.length} foto{photos.length > 1 ? 's' : ''} de recepción):
@@ -473,9 +545,9 @@ export default function OrderServicePDF({ order, itemPhotosMap = {}, termsAndCon
                                                     ))}
                                                 </View>
                                             </View>
-                                        )}
+                                        ) : null}
                                     </View>
-                                )}
+                                ) : null}
                             </View>
                         );
                     })}
@@ -506,22 +578,64 @@ export default function OrderServicePDF({ order, itemPhotosMap = {}, termsAndCon
                     </View>
                 </View>
 
-                {/* PIE DE PÁGINA, TÉRMINOS Y FIRMA DEL CLIENTE */}
+                {/* BLOQUE DE CONFORMIDAD DE ENTREGA Y FINIQUITO (SI APLICA) */}
+                {isDelivered ? (
+                    <View style={styles.deliveryCard} wrap={false}>
+                        <View style={styles.deliveryHeaderRow}>
+                            <Text style={styles.deliveryTitle}>CONFORMIDAD DE ENTREGA Y FINIQUITO</Text>
+                            <Text style={styles.deliveryBadge}>PAGADO Y ENTREGADO</Text>
+                        </View>
+                        <Text style={styles.deliveryLegalText}>
+                            El cliente confirma recibir la(s) pieza(s) a entera satisfacción y liquida el total del servicio.
+                        </Text>
+                        {order.delivered_at ? (
+                            <Text style={styles.deliveryDateText}>
+                                Fecha y hora de entrega: {formatDateTime(order.delivered_at)}
+                            </Text>
+                        ) : null}
+                    </View>
+                ) : null}
+
+                {/* PIE DE PÁGINA, TÉRMINOS Y FIRMAS */}
                 <View style={styles.footerArea} wrap={false}>
                     <Text style={styles.termsNotice}>
                         {termsAndConditions}
                     </Text>
 
-                    <View style={styles.signatureBlock}>
-                        {signatureUrl ? (
-                            <Image src={signatureUrl} style={styles.signatureImg} />
-                        ) : (
-                            <View style={{ height: 35 }} />
-                        )}
-                        <View style={styles.signatureLine} />
-                        <Text style={styles.signatureTitle}>Firma de Conformidad del Cliente</Text>
-                        <Text style={styles.signatureSub}>{customerName}</Text>
-                    </View>
+                    {isDelivered && deliverySignatureUrl ? (
+                        <View style={styles.dualSignatureRow}>
+                            {/* FIRMA 1: RECEPCIÓN */}
+                            <View style={styles.dualSignatureBlock}>
+                                {signatureUrl ? (
+                                    <Image src={signatureUrl} style={styles.signatureImg} />
+                                ) : (
+                                    <View style={{ height: 35 }} />
+                                )}
+                                <View style={styles.signatureLine} />
+                                <Text style={styles.signatureTitle}>Firma 1: Recepción de Pieza</Text>
+                                <Text style={styles.signatureSub}>{customerName}</Text>
+                            </View>
+
+                            {/* FIRMA 2: ENTREGA Y FINIQUITO */}
+                            <View style={styles.dualSignatureBlock}>
+                                <Image src={deliverySignatureUrl} style={styles.signatureImg} />
+                                <View style={styles.signatureLine} />
+                                <Text style={styles.signatureTitle}>Firma 2: Entrega y Finiquito</Text>
+                                <Text style={styles.signatureSub}>{customerName}</Text>
+                            </View>
+                        </View>
+                    ) : (
+                        <View style={styles.signatureBlock}>
+                            {signatureUrl ? (
+                                <Image src={signatureUrl} style={styles.signatureImg} />
+                            ) : (
+                                <View style={{ height: 35 }} />
+                            )}
+                            <View style={styles.signatureLine} />
+                            <Text style={styles.signatureTitle}>Firma de Conformidad del Cliente</Text>
+                            <Text style={styles.signatureSub}>{customerName}</Text>
+                        </View>
+                    )}
                 </View>
 
                 {/* PIE DE PÁGINA INFERIOR */}

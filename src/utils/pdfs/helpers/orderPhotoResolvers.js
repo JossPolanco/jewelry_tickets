@@ -34,6 +34,10 @@ export async function resolveOrderPhotoUrls(order) {
         }
     });
 
+    if (Array.isArray(order.delivery_photo_ids)) {
+        allIds.push(...order.delivery_photo_ids);
+    }
+
     const uniqueIds = [...new Set(allIds)].filter(Boolean);
     if (uniqueIds.length === 0) return {};
 

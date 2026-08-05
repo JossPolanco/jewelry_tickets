@@ -9,6 +9,13 @@ export const OPTIMIZATION_PROFILES = {
         useWebWorker: true,
         fileType: "image/webp",
     },
+    photos: {
+        maxSizeMB: 1.2,
+        maxWidthOrHeight: 1920,
+        initialQuality: 0.8,
+        useWebWorker: true,
+        fileType: "image/webp",
+    },
     // AVATARES DE PERFIL, PRIORIDAD TAMAÑO SOBRE CALIDAD, FOTO DE IPHONE 12MB → ~50–100KB EN WEBP
     avatar: {
         maxSizeMB: 0.15,
@@ -39,7 +46,7 @@ export const OPTIMIZATION_PROFILES = {
 
 // FUNCION PARA REMPLAZAR LA EXTENSION DEL NOMBRE DE ARCHIVO CON LA NUEVA EXTENSION .webP
 const buildWebpFileName = (originalName) => {
-    const nameWithoutExt = originalName.replace(/\.[^/.]+$/, "");
+    const nameWithoutExt = originalName ? originalName.replace(/\.[^/.]+$/, "") : "image";
     return `${nameWithoutExt}.webp`;
 };
 
@@ -66,21 +73,18 @@ const getImageDimensions = (blob) => {
 
         img.onerror = () => {
             URL.revokeObjectURL(url);
-            reject(new Error("No se pudieron obtener las dimensiones de la imagen."));
+            // Si falla la decodificación de dimensiones, usar valores por defecto en lugar de romper el flujo
+            resolve({ width: 800, height: 600 });
         };
 
         img.src = url;
     });
 };
 
-// FUNCION 
+// FUNCION PRINCIPAL DE OPTIMIZACIÓN
 export const optimizeImage = async (file, profile = "photo", customOptions = {}, onProgress = null) => {
     try {
-        const profileOptions = OPTIMIZATION_PROFILES[profile];
-
-        if (!profileOptions) {
-            throw new Error(`Perfil de optimización desconocido: "${profile}". Usa: ${Object.keys(OPTIMIZATION_PROFILES).join(", ")}.`);
-        }
+        const profileOptions = OPTIMIZATION_PROFILES[profile] || OPTIMIZATION_PROFILES.photo;
 
         const options = {
             ...profileOptions,
@@ -90,8 +94,14 @@ export const optimizeImage = async (file, profile = "photo", customOptions = {},
 
         const originalSizeBytes = file.size;
 
-        // COMPRESION Y CONVERSION A WEVP EN WEB WORKER
-        const compressedBlob = await imageCompression(file, options);
+        // COMPRESION Y CONVERSION A WEBP EN WEB WORKER CON FALLBACK EN HILO PRINCIPAL
+        let compressedBlob;
+        try {
+            compressedBlob = await imageCompression(file, options);
+        } catch (workerError) {
+            console.warn("[imageOptimizer] Fallback a compresión sin WebWorker:", workerError);
+            compressedBlob = await imageCompression(file, { ...options, useWebWorker: false });
+        }
 
         // CONSTRUYE UN FILE REAL DESDE EL BLOB PARA QUE TENGA NOMBRE Y TIPO CORRECTOS
         const optimizedFile = new File(
@@ -100,7 +110,7 @@ export const optimizeImage = async (file, profile = "photo", customOptions = {},
             { type: "image/webp" }
         );
 
-        // OBTIENE DIMENSIONES Y PREVIEW EN PARALELO (AMBOS SON RÁPIDOS)
+        // OBTIENE DIMENSIONES Y PREVIEW EN PARALELO
         const [dimensions, previewUrl] = await Promise.all([
             getImageDimensions(compressedBlob),
             blobToDataUrl(compressedBlob),
@@ -123,18 +133,17 @@ export const optimizeImage = async (file, profile = "photo", customOptions = {},
             },
         };
     } catch (error) {
-        // browser-image-compression lanza errores con mensajes en inglés
-        // Los traducimos a mensajes amigables en español
+        console.error("Error al optimizar la imagen:", error);
         const message = error?.message?.toLowerCase() ?? "";
 
         if (message.includes("exceeded") || message.includes("size")) {
             throw new Error("No se pudo comprimir la imagen al tamaño requerido. Intenta con una imagen más pequeña.");
         }
 
-        if (message.includes("worker") || message.includes("web worker")) {
-            throw new Error("Error en el procesamiento en segundo plano. Recarga la página e intenta nuevamente.");
+        if (error.message && !message.includes("damaged")) {
+            throw error;
         }
 
-        throw new Error("No se pudo optimizar la imagen. Verifica que el archivo no esté dañado.");
-    };
-}
+        throw new Error(`No se pudo optimizar la imagen: ${error?.message || 'Error desconocido'}`);
+    }
+};

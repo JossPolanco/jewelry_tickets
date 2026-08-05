@@ -1,7 +1,7 @@
 import {
     ArrowLeft, Edit3, Calendar, User, Phone, Mail, Package, Scale, DollarSign, Hammer, MessageSquare,
     Clock, AlertCircle, Plus, Trash2, Camera, Loader2, X, Send, RefreshCw, PenTool, ShieldCheck, Image as ImageIcon,
-    Receipt, ChevronDown, ChevronUp, CreditCard
+    Receipt, ChevronDown, ChevronUp, PackageCheck, CheckCircle2
 } from 'lucide-react';
 import { getOrderDetail, getOrderItems, updateOrder, updateOrderItem, createOrderItem, deleteOrderItem, getTermsAndConditions } from '@/services/orders';
 import { getPaymentsByOrderId, createPayment, deletePayment } from '@/services/payments';
@@ -11,6 +11,7 @@ import React, { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { deleteImage, BUCKETS } from '@/services/images/imageUploader';
 import { ITEM_TYPES, SERVICE_TYPES, formatDate } from '@/utils';
 import { useImageUpload } from '@/hooks/images/useImageUpload';
+import DeliveryModal from '@/components/orders/DeliveryModal';
 import { getCurrentUser } from '@/services/user/userService';
 import { getSignedUrl } from '@/services/images/imageUrl';
 import { useParams, useNavigate } from 'react-router';
@@ -319,11 +320,13 @@ export default function OrderDetail() {
 
     // DICCIONARIO CON RESOLUCIÓN DE IMÁGENES POR ÍTEM
     const [resolvedItemPhotos, setResolvedItemPhotos] = useState({});
+    const [deliveryPhotosUrls, setDeliveryPhotosUrls] = useState([]);
 
     // REFERENCIAS DE MODALES
     const editOrderModalRef = useRef(null);
     const editItemModalRef = useRef(null);
     const addPaymentModalRef = useRef(null);
+    const deliveryModalRef = useRef(null);
 
     const { user, organization } = useUser();
     const [showPaymentsHistory, setShowPaymentsHistory] = useState(false);
@@ -439,6 +442,48 @@ export default function OrderDetail() {
         enabled: !!targetOrgId
     });
 
+    // RESOLVER FOTOGRAFÍAS DE ENTREGA DE LA ORDEN SI EXISTEN
+    useEffect(() => {
+        if (!orderData?.delivery_photo_ids || !Array.isArray(orderData.delivery_photo_ids) || orderData.delivery_photo_ids.length === 0) {
+            setDeliveryPhotosUrls([]);
+            return;
+        }
+
+        let isMounted = true;
+        const loadDeliveryPhotos = async () => {
+            const urls = [];
+            for (const pId of orderData.delivery_photo_ids) {
+                try {
+                    const metaRes = await getImageById(pId);
+                    if (metaRes?.success && metaRes.data?.image) {
+                        const img = metaRes.data.image;
+                        const signedRes = await getSignedUrl(img.storage_path, img.bucket || BUCKETS.PHOTOS);
+                        if (signedRes?.success && signedRes.data?.signedUrl) {
+                            urls.push(signedRes.data.signedUrl);
+                        }
+                    }
+                } catch (err) {
+                    console.warn('Error resolviendo foto de entrega:', err);
+                }
+            }
+            if (isMounted) {
+                setDeliveryPhotosUrls(urls);
+            }
+        };
+
+        loadDeliveryPhotos();
+        return () => {
+            isMounted = false;
+        };
+    }, [orderData?.delivery_photo_ids]);
+
+    const handleDeliverySuccess = async () => {
+        await refetchOrder();
+        await refetchItems();
+        queryClient.invalidateQueries({ queryKey: ['orderDetail', id] });
+        queryClient.invalidateQueries({ queryKey: ['orderPayments', id] });
+    };
+
     // RESOLVER FOTOS CON URLs FIRMADAS AL CARGAR ÍTEMS
     useEffect(() => {
         if (!items || items.length === 0) return;
@@ -498,7 +543,7 @@ export default function OrderDetail() {
     }, [items]);
 
     // ORDEN DE SERVICIO PREPARADA CON FOTOGRAFÍAS BASE64 PARA PDF
-    const fullPreparedOrder = useEffect ? React.useMemo(() => {
+    const fullPreparedOrder = React.useMemo(() => {
         if (!order) return null;
         const orderItems = items.map((item) => {
             const itemPhotos = resolvedItemPhotos[item.id] || [];
@@ -512,7 +557,7 @@ export default function OrderDetail() {
             order_items: orderItems,
             items: orderItems
         };
-    }, [order, items, resolvedItemPhotos]) : null;
+    }, [order, items, resolvedItemPhotos]);
 
     // MUTACIÓN PARA ACTUALIZAR DATOS DE LA ORDEN DE SERVICIO
     const [orderForm, setOrderForm] = useState({
@@ -573,6 +618,10 @@ export default function OrderDetail() {
     const [itemErrors, setItemErrors] = useState({});
 
     const handleOpenAddItemModal = () => {
+        if (order?.status === 'Entregado') {
+            showToast('No se pueden añadir piezas a una orden ya entregada', 'warning');
+            return;
+        }
         setItemEditing(null);
         setItemForm({
             item_type: '',
@@ -893,6 +942,26 @@ export default function OrderDetail() {
                             <Edit3 className="w-4 h-4" />
                             Editar Orden
                         </button>
+
+                        {order.status === 'Entregado' ? (
+                            <span
+                                className="btn btn-neutral btn-sm h-11 rounded-xl font-bold gap-1.5 shadow-xs text-xs sm:text-sm flex-1 sm:flex-none border border-emerald-500/40 bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 cursor-default"
+                                title="La orden ha sido entregada y finiquitada"
+                            >
+                                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                Entregado
+                            </span>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => deliveryModalRef.current?.open()}
+                                className="btn btn-success btn-sm h-11 rounded-xl text-white font-extrabold gap-1.5 shadow-xs active:scale-95 transition-all text-xs sm:text-sm flex-1 sm:flex-none"
+                                title="Firma y Comprobante de Entrega"
+                            >
+                                <PackageCheck className="w-4 h-4" />
+                                Entregar Orden
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -1098,6 +1167,57 @@ export default function OrderDetail() {
                             </div>
                         )}
 
+                        {/* TARJETA DE FIRMA DE ENTREGA Y FINIQUITO SI EXISTE */}
+                        {order.delivery_signature_data && (
+                            <div className="bg-base-100 border border-emerald-500/40 rounded-2xl p-5 shadow-xs space-y-3">
+                                <div className="flex items-center justify-between border-b border-base-200 pb-3">
+                                    <h2 className="text-sm font-extrabold text-base-content flex items-center gap-2">
+                                        <PackageCheck className="w-4 h-4 text-emerald-600" />
+                                        Firma de Entrega y Finiquito
+                                    </h2>
+                                    <span className="badge badge-success text-white text-[10px] font-bold">
+                                        Entregado
+                                    </span>
+                                </div>
+
+                                {order.delivered_at && (
+                                    <p className="text-xs text-base-content/70 flex items-center gap-1 font-medium">
+                                        <Clock className="w-3.5 h-3.5 text-primary" />
+                                        Entregado el: <strong>{formatDate(order.delivered_at)}</strong>
+                                    </p>
+                                )}
+
+                                <div className="bg-emerald-500/5 rounded-xl p-2 border border-emerald-500/20 flex items-center justify-center overflow-hidden">
+                                    <SignatureDisplay signatureData={order.delivery_signature_data} />
+                                </div>
+
+                                <span className="text-[11px] text-base-content/60 flex items-center gap-1 justify-center">
+                                    <ShieldCheck className="w-3.5 h-3.5 text-success" />
+                                    Conformidad del cliente y finiquito registrado
+                                </span>
+
+                                {deliveryPhotosUrls.length > 0 && (
+                                    <div className="pt-2 border-t border-base-200 space-y-2">
+                                        <span className="text-xs font-bold text-base-content flex items-center gap-1">
+                                            <Camera className="w-3.5 h-3.5 text-primary" />
+                                            Fotos de Entrega ({deliveryPhotosUrls.length}):
+                                        </span>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {deliveryPhotosUrls.map((url, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    onClick={() => setLightboxImage(url)}
+                                                    className="cursor-pointer group rounded-xl overflow-hidden border border-base-300 bg-base-200 aspect-video flex items-center justify-center shadow-xs hover:border-primary transition-all"
+                                                >
+                                                    <img src={url} alt={`Foto entrega ${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                     </div>
 
                     {/* COLUMNA DERECHA: PIEZAS REGISTRADAS (2 COLS EN LG) */}
@@ -1117,7 +1237,9 @@ export default function OrderDetail() {
                                 <button
                                     type="button"
                                     onClick={handleOpenAddItemModal}
-                                    className="btn btn-primary btn-sm h-9 rounded-xl px-3 font-bold gap-1 active:scale-95 transition-all text-xs"
+                                    disabled={order?.status === 'Entregado'}
+                                    className="btn btn-primary btn-sm h-9 rounded-xl px-3 font-bold gap-1 active:scale-95 transition-all text-xs disabled:bg-base-300 disabled:text-base-content/40 disabled:border-base-300 disabled:opacity-60"
+                                    title={order?.status === 'Entregado' ? 'No se pueden añadir piezas a una orden entregada' : 'Añadir pieza'}
                                 >
                                     <Plus className="w-4 h-4" />
                                     Añadir pieza
@@ -1134,13 +1256,15 @@ export default function OrderDetail() {
                                 <div className="py-12 border-2 border-dashed border-base-300 rounded-2xl text-center space-y-3 p-4">
                                     <Package className="w-10 h-10 text-base-content/30 mx-auto" />
                                     <p className="text-sm font-bold text-base-content">No hay piezas registradas en esta orden</p>
-                                    <button
-                                        type="button"
-                                        onClick={handleOpenAddItemModal}
-                                        className="btn btn-primary btn-sm rounded-xl text-xs gap-1.5"
-                                    >
-                                        <Plus className="w-4 h-4" /> Agregar primera pieza
-                                    </button>
+                                    {order?.status !== 'Entregado' && (
+                                        <button
+                                            type="button"
+                                            onClick={handleOpenAddItemModal}
+                                            className="btn btn-primary btn-sm rounded-xl text-xs gap-1.5"
+                                        >
+                                            <Plus className="w-4 h-4" /> Agregar primera pieza
+                                        </button>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="space-y-3.5">
@@ -1167,26 +1291,28 @@ export default function OrderDetail() {
                                                         </span>
                                                     </div>
 
-                                                    <div className="flex items-center gap-1">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleOpenEditItemModal(item)}
-                                                            className="btn btn-ghost btn-xs btn-circle text-primary hover:bg-primary/10"
-                                                            title="Editar pieza"
-                                                            aria-label="Editar pieza"
-                                                        >
-                                                            <Edit3 className="w-4 h-4" />
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleDeleteItem(item)}
-                                                            className="btn btn-ghost btn-xs btn-circle text-error hover:bg-error/10"
-                                                            title="Eliminar pieza"
-                                                            aria-label="Eliminar pieza"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
+                                                    {order?.status !== 'Entregado' && (
+                                                        <div className="flex items-center gap-1">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleOpenEditItemModal(item)}
+                                                                className="btn btn-ghost btn-xs btn-circle text-primary hover:bg-primary/10"
+                                                                title="Editar pieza"
+                                                                aria-label="Editar pieza"
+                                                            >
+                                                                <Edit3 className="w-4 h-4" />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleDeleteItem(item)}
+                                                                className="btn btn-ghost btn-xs btn-circle text-error hover:bg-error/10"
+                                                                title="Eliminar pieza"
+                                                                aria-label="Eliminar pieza"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 {/* DESCRIPCIÓN */}
@@ -1662,6 +1788,14 @@ export default function OrderDetail() {
                     </div>
                 </form>
             </Modal>
+
+            {/* MODAL DE ENTREGA DE ORDEN Y FINIQUITO */}
+            <DeliveryModal
+                ref={deliveryModalRef}
+                order={order}
+                onSuccess={handleDeliverySuccess}
+                onShowToast={showToast}
+            />
 
             {/* LIGHTBOX MODAL PARA VER FOTOGRAFÍA EN GRANDE */}
             {lightboxImage && (

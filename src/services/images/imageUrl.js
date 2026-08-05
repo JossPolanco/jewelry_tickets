@@ -12,13 +12,15 @@ export const URL_EXPIRY = {
 };
 
 // FUNCION PARA OBTENER LAS URLs DE LAS IMAGENES 
-export const getSignedUrl = async (storagePath, bucket, expiresIn = URL_EXPIRY.GALLERY) => {
-    if (!storagePath || !bucket) {
-        throw new Error("Se requieren storagePath y bucket para generar la URL.");
+export const getSignedUrl = async (storagePath, bucket = "photos", expiresIn = URL_EXPIRY.GALLERY) => {
+    if (!storagePath) {
+        throw new Error("Se requiere storagePath para generar la URL.");
     }
 
+    const targetBucket = "photos";
+
     const { data, error } = await supabaseClient.storage
-        .from(bucket)
+        .from(targetBucket)
         .createSignedUrl(storagePath, expiresIn);
 
     if (error) {
@@ -35,19 +37,17 @@ export const getSignedUrl = async (storagePath, bucket, expiresIn = URL_EXPIRY.G
 };
 
 // 
-export const getSignedUrls = async (images, bucket, expiresIn = URL_EXPIRY.GALLERY,) => {
+export const getSignedUrls = async (images, bucket = "photos", expiresIn = URL_EXPIRY.GALLERY,) => {
     if (!Array.isArray(images) || images.length === 0) {
-        throw new error("No se proporcionaron imágenes.")
+        throw new Error("No se proporcionaron imágenes.")
     }
 
-    if (!bucket) {
-        throw new error("Se requiere el nombre del bucket.")
-    }
+    const targetBucket = "photos";
 
     const paths = images.map((img) => img.storagePath);
 
     const { data, error } = await supabaseClient.storage
-        .from(bucket)
+        .from(targetBucket)
         .createSignedUrls(paths, expiresIn);
 
     if (error) {

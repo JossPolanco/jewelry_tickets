@@ -4,14 +4,15 @@
  * */
 import { supabaseClient } from "../../utils/supabase";
 
-// BUCKETS EN SUPABASE
+// BUCKETS EN SUPABASE (El único bucket configurado en la base de datos es "photos")
 export const BUCKETS = {
     PHOTOS: "photos",
-    AVATARS: "avatars",
-    DRAWINGS: "drawings",
+    JEWELRY_PHOTOS: "photos",
+    AVATARS: "photos",
+    DRAWINGS: "photos",
 };
 
-// GENERA UN PATCH UNICO PARA CADA IMAGEN
+// GENERA UN PATH ÚNICO PARA CADA IMAGEN
 const generateStoragePath = (userId, fileName) => {
     const now = new Date();
     const year = now.getFullYear();
@@ -26,13 +27,8 @@ const generateStoragePath = (userId, fileName) => {
 };
 
 const validateBucket = (bucket) => {
-    const validBuckets = Object.values(BUCKETS);
-
-    if (!validBuckets.includes(bucket)) {
-        throw new Error(`Bucket inválido: "${bucket}". Usa uno de: ${validBuckets.join(", ")}.`);
-    }
-
-    return { success: true };
+    // Si viene nulo o desconocido, normalizar a "photos"
+    return { success: true, bucket: BUCKETS.PHOTOS };
 };
 
 // FUNCION PRINCIPAL PARA SUBIR LA IMAGEN
@@ -45,13 +41,11 @@ export const uploadImage = async (file, bucket, userId) => {
         throw new Error("Se requiere el ID del usuario para subir imágenes.");
     }
 
-    const bucketCheck = validateBucket(bucket);
-    if (!bucketCheck.success) return bucketCheck;
-
+    const targetBucket = BUCKETS.PHOTOS;
     const storagePath = generateStoragePath(userId, file.name);
 
     const { error } = await supabaseClient.storage
-        .from(bucket)
+        .from(targetBucket)
         .upload(storagePath, file, {
             contentType: "image/webp",
             upsert: false,
@@ -101,11 +95,10 @@ export const deleteImage = async (storagePath, bucket) => {
         throw new Error("Se requiere el path del archivo.");
     }
 
-    const bucketCheck = validateBucket(bucket);
-    if (!bucketCheck.success) throw new Error("Bucket inválido.");
+    const targetBucket = bucket || BUCKETS.PHOTOS || 'photos';
 
     const { error } = await supabaseClient.storage
-        .from(bucket)
+        .from(targetBucket)
         .remove([storagePath]);
 
     if (error) {
@@ -121,11 +114,10 @@ export const deleteImages = async (storagePaths, bucket) => {
         throw new Error("No se proporcionaron paths de archivos.");
     }
 
-    const bucketCheck = validateBucket(bucket);
-    if (!bucketCheck.success) throw new Error("Bucket inválido.");
+    const targetBucket = bucket || BUCKETS.PHOTOS || 'photos';
 
     const { error } = await supabaseClient.storage
-        .from(bucket)
+        .from(targetBucket)
         .remove(storagePaths);
 
     if (error) {

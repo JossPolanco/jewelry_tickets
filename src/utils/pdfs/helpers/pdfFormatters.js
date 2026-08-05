@@ -45,6 +45,31 @@ export function formatDate(dateString) {
 }
 
 /**
+ * FORMATEA FECHAS ISO O CADENAS DE FECHA CON HORA A DD/MM/YYYY HH:MM hrs
+ * EJEMPLO: "2026-07-29T14:30:00" -> "29/07/2026, 14:30 hrs"
+ */
+export function formatDateTime(dateString) {
+    if (!dateString) return 'N/A';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString;
+        const formattedDate = date.toLocaleDateString('es-MX', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+        const formattedTime = date.toLocaleTimeString('es-MX', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+        return `${formattedDate}, ${formattedTime}`;
+    } catch {
+        return dateString;
+    }
+}
+
+/**
  * FORMATEA EL NÚMERO DE FOLIO RELLENANDO CON CEROS A LA IZQUIERDA
  * EJEMPLO: 7 -> "#00007"
  */
