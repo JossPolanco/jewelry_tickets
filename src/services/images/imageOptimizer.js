@@ -1,7 +1,6 @@
 import imageCompression from "browser-image-compression";
 
 export const OPTIMIZATION_PROFILES = {
-    // FOTOS PERSONALES DEL ALBUM, PRIORIDAD CALIDAD SOBRE TAMAÑO, FOTO DE IPHONE 12MB → ~600KB–1.2MB EN WEBP
     photo: {
         maxSizeMB: 1.2,
         maxWidthOrHeight: 1920,
@@ -16,7 +15,6 @@ export const OPTIMIZATION_PROFILES = {
         useWebWorker: true,
         fileType: "image/webp",
     },
-    // AVATARES DE PERFIL, PRIORIDAD TAMAÑO SOBRE CALIDAD, FOTO DE IPHONE 12MB → ~50–100KB EN WEBP
     avatar: {
         maxSizeMB: 0.15,
         maxWidthOrHeight: 400,
@@ -24,8 +22,6 @@ export const OPTIMIZATION_PROFILES = {
         useWebWorker: true,
         fileType: "image/webp",
     },
-
-    // DIBUJOS DEL MINIJUEGO, PRIORIDAD CALIDAD SOBRE TAMAÑO, DIBUJO DE 5MB → ~400–800KB EN WEBP
     drawing: {
         maxSizeMB: 0.8,
         maxWidthOrHeight: 1440,
@@ -33,8 +29,6 @@ export const OPTIMIZATION_PROFILES = {
         useWebWorker: true,
         fileType: "image/webp",
     },
-
-    // MINIATURAS DE GALERÍA, PRIORIDAD TAMAÑO SOBRE CALIDAD, FOTO DE IPHONE 12MB → ~50KB EN WEBP
     thumbnail: {
         maxSizeMB: 0.05,
         maxWidthOrHeight: 300,
@@ -70,7 +64,6 @@ const getExtensionForMime = (mimeType) => {
     return "webp";
 };
 
-// CONSTRUYE UN NOMBRE CON LA EXTENSIÓN DE ARCHIVO ADECUADA SEGÚN SU TIPO MIME REAL
 const buildOptimizedFileName = (originalName, mimeType = "image/webp") => {
     const nameWithoutExt = originalName ? originalName.replace(/\.[^/.]+$/, "") : "image";
     const ext = getExtensionForMime(mimeType);
@@ -87,24 +80,86 @@ const blobToDataUrl = (blob) => {
     });
 };
 
-// OBTIENE LAS DIMENSIONES DE UNA IMAGEN A PARTIR DE UN BLOB
-const getImageDimensions = (blob) => {
-    return new Promise((resolve) => {
-        const url = URL.createObjectURL(blob);
+// MULTI-ESTRATEGIA ROBUSTA PARA CARGAR IMAGENES DESDE CUALQUIER NAVEGADOR / WEBVIEW MÓVIL
+const loadImageSource = async (file) => {
+    // 1. Método A: createImageBitmap (Nativo de navegador, ultra rápido, decodificación C++)
+    if (typeof createImageBitmap === "function") {
+        try {
+            const bitmap = await createImageBitmap(file);
+            return {
+                type: "bitmap",
+                source: bitmap,
+                width: bitmap.width,
+                height: bitmap.height,
+                close: () => bitmap.close(),
+            };
+        } catch (err) {
+            console.warn("[imageOptimizer] createImageBitmap no disponible o falló:", err);
+        }
+    }
+
+    // 2. Método B: FileReader -> DataURL (Base64 inline, 100% inmune a restricciones origin/blob de WebViews)
+    try {
+        const dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = () => reject(new Error("FileReader DataURL falló"));
+            reader.readAsDataURL(file);
+        });
+
+        const img = await new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => resolve(image);
+            image.onerror = () => reject(new Error("Carga de Image por DataURL falló"));
+            image.src = dataUrl;
+        });
+
+        return {
+            type: "image",
+            source: img,
+            width: img.naturalWidth || img.width,
+            height: img.naturalHeight || img.height,
+            close: () => {},
+        };
+    } catch (err) {
+        console.warn("[imageOptimizer] FileReader DataURL falló:", err);
+    }
+
+    // 3. Método C: URL.createObjectURL (Fallback tradicional con Blob URL)
+    return new Promise((resolve, reject) => {
+        const objectUrl = URL.createObjectURL(file);
         const img = new Image();
 
         img.onload = () => {
-            resolve({ width: img.naturalWidth || 800, height: img.naturalHeight || 600 });
-            URL.revokeObjectURL(url);
+            URL.revokeObjectURL(objectUrl);
+            resolve({
+                type: "image",
+                source: img,
+                width: img.naturalWidth || img.width,
+                height: img.naturalHeight || img.height,
+                close: () => {},
+            });
         };
 
         img.onerror = () => {
-            URL.revokeObjectURL(url);
-            resolve({ width: 800, height: 600 });
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error("No se pudo leer la imagen mediante ninguna de las estrategias del navegador."));
         };
 
-        img.src = url;
+        img.src = objectUrl;
     });
+};
+
+// OBTIENE LAS DIMENSIONES DE UNA IMAGEN A PARTIR DE UN BLOB
+const getImageDimensions = async (blob) => {
+    try {
+        const loaded = await loadImageSource(blob);
+        const dims = { width: loaded.width || 800, height: loaded.height || 600 };
+        loaded.close();
+        return dims;
+    } catch {
+        return { width: 800, height: 600 };
+    }
 };
 
 // FALLBACK NATIVO MEDIANTE HTML5 CANVAS PARA NAVEGADORES O FOTOS CON INCOMPATIBILIDADES
@@ -117,93 +172,81 @@ const compressImageWithCanvas = async (file, options = {}, onProgress = null) =>
 
     if (onProgress) onProgress(20);
 
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        const objectUrl = URL.createObjectURL(file);
+    const loaded = await loadImageSource(file);
 
-        img.onload = async () => {
-            URL.revokeObjectURL(objectUrl);
-            if (onProgress) onProgress(40);
+    try {
+        if (onProgress) onProgress(40);
 
-            try {
-                let width = img.naturalWidth || img.width;
-                let height = img.naturalHeight || img.height;
+        let width = loaded.width;
+        let height = loaded.height;
 
-                if (!width || !height) {
-                    return reject(new Error("No se pudieron obtener las dimensiones de la imagen."));
-                }
+        if (!width || !height) {
+            width = 1200;
+            height = 900;
+        }
 
-                if (width > maxWidthOrHeight || height > maxWidthOrHeight) {
-                    if (width > height) {
-                        height = Math.round((height * maxWidthOrHeight) / width);
-                        width = maxWidthOrHeight;
-                    } else {
-                        width = Math.round((width * maxWidthOrHeight) / height);
-                        height = maxWidthOrHeight;
-                    }
-                }
-
-                const canvas = document.createElement("canvas");
-                canvas.width = width;
-                canvas.height = height;
-
-                const ctx = canvas.getContext("2d");
-                if (!ctx) {
-                    return reject(new Error("No se pudo iniciar el lienzo (canvas 2D) para compresión."));
-                }
-
-                ctx.fillStyle = "#FFFFFF";
-                ctx.fillRect(0, 0, width, height);
-                ctx.drawImage(img, 0, 0, width, height);
-
-                if (onProgress) onProgress(70);
-
-                const getCanvasBlob = (targetMime, quality) => {
-                    return new Promise((res) => {
-                        try {
-                            canvas.toBlob(
-                                (blob) => res(blob && blob.size > 0 ? blob : null),
-                                targetMime,
-                                quality
-                            );
-                        } catch {
-                            res(null);
-                        }
-                    });
-                };
-
-                // 1. Intentar formato original/deseado (ej. image/webp)
-                let compressedBlob = await getCanvasBlob(fileType, initialQuality);
-
-                // 2. Si falla WebP (común en webviews/navegadores sin soporte completo a canvas.toBlob webp), reintentar en JPEG
-                if (!compressedBlob && fileType !== "image/jpeg") {
-                    compressedBlob = await getCanvasBlob("image/jpeg", initialQuality);
-                }
-
-                // 3. Si aún no hay blob, reintentar con tipo original o PNG
-                if (!compressedBlob) {
-                    const fallbackMime = file.type || "image/png";
-                    compressedBlob = await getCanvasBlob(fallbackMime, initialQuality);
-                }
-
-                if (!compressedBlob) {
-                    return reject(new Error("El navegador no pudo exportar el lienzo a un archivo comprimido."));
-                }
-
-                if (onProgress) onProgress(90);
-                resolve(compressedBlob);
-            } catch (err) {
-                reject(err);
+        if (width > maxWidthOrHeight || height > maxWidthOrHeight) {
+            if (width > height) {
+                height = Math.round((height * maxWidthOrHeight) / width);
+                width = maxWidthOrHeight;
+            } else {
+                width = Math.round((width * maxWidthOrHeight) / height);
+                height = maxWidthOrHeight;
             }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+            throw new Error("No se pudo iniciar el lienzo (canvas 2D) para compresión.");
+        }
+
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(loaded.source, 0, 0, width, height);
+
+        if (onProgress) onProgress(70);
+
+        const getCanvasBlob = (targetMime, quality) => {
+            return new Promise((res) => {
+                try {
+                    canvas.toBlob(
+                        (blob) => res(blob && blob.size > 0 ? blob : null),
+                        targetMime,
+                        quality
+                    );
+                } catch {
+                    res(null);
+                }
+            });
         };
 
-        img.onerror = () => {
-            URL.revokeObjectURL(objectUrl);
-            reject(new Error("No se pudo cargar la imagen para compresión en canvas. El archivo podría tener un formato o encabezado no soportado por el navegador."));
-        };
+        // 1. Intentar formato deseado (ej. image/webp)
+        let compressedBlob = await getCanvasBlob(fileType, initialQuality);
 
-        img.src = objectUrl;
-    });
+        // 2. Si falla WebP, reintentar en JPEG
+        if (!compressedBlob && fileType !== "image/jpeg") {
+            compressedBlob = await getCanvasBlob("image/jpeg", initialQuality);
+        }
+
+        // 3. Si aún no hay blob, reintentar con tipo original o PNG
+        if (!compressedBlob) {
+            const fallbackMime = file.type || "image/png";
+            compressedBlob = await getCanvasBlob(fallbackMime, initialQuality);
+        }
+
+        if (!compressedBlob) {
+            throw new Error("El navegador no pudo exportar el lienzo a un archivo comprimido.");
+        }
+
+        if (onProgress) onProgress(90);
+        return compressedBlob;
+    } finally {
+        loaded.close();
+    }
 };
 
 // FUNCION PRINCIPAL DE OPTIMIZACIÓN CON MULTICAPAS DE FALLBACK
@@ -243,14 +286,14 @@ export const optimizeImage = async (file, profile = "photo", customOptions = {},
                 } catch (err3) {
                     console.warn("[imageOptimizer] Fallback 3 (compresión Canvas HTML5 nativa) por:", formatErrorDetail(err3));
 
-                    // CAPA 4: Compresión nativa con HTML5 Canvas y fallback de exportación
+                    // CAPA 4: Compresión nativa con HTML5 Canvas e imagen multi-fuente (createImageBitmap / Base64 / BlobURL)
                     try {
                         compressedBlob = await compressImageWithCanvas(file, options, onProgress);
                     } catch (err4) {
                         console.warn("[imageOptimizer] Fallback 4 (archivo directo) por:", formatErrorDetail(err4));
 
-                        // CAPA 5: Si la imagen ya es razonablemente pequeña (<= 1.5MB), usar el archivo original sin romper
-                        const maxSizeMB = options.maxSizeMB || 1.5;
+                        // CAPA 5: Si la imagen ya es razonablemente pequeña (<= 2MB), usar el archivo original sin romper
+                        const maxSizeMB = options.maxSizeMB || 2;
                         const maxSizeBytes = maxSizeMB * 1024 * 1024;
                         if (file.size <= maxSizeBytes) {
                             compressedBlob = file;
