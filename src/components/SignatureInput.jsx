@@ -1,5 +1,5 @@
 import SignatureCanvas from 'react-signature-canvas'
-import React, { useRef, useEffect, useImperativeHandle, forwardRef, useCallback } from 'react'
+import React, { useRef, useEffect, useImperativeHandle, forwardRef } from 'react'
 
 const SignatureInput = forwardRef(function SignatureInput(
     { value, onChange, onSave, onClear, disabled = false, className = '' },
@@ -7,8 +7,13 @@ const SignatureInput = forwardRef(function SignatureInput(
 ) {
     const sigPadRef = useRef(null)
     const containerRef = useRef(null)
+    const valueRef = useRef(value)
+    const initializedRef = useRef(false)
 
-    // Clonador profundo seguro para evitar mutaciones de array compartidos con signature_pad
+    // Mantener valueRef siempre sincronizado con la última prop value
+    valueRef.current = value
+
+    // Clon profundo para evitar mutaciones internas de signature_pad
     const deepClonePoints = (data) => {
         if (!data) return null
         try {
@@ -16,15 +21,14 @@ const SignatureInput = forwardRef(function SignatureInput(
             if (Array.isArray(parsed) && parsed.length > 0) {
                 return JSON.parse(JSON.stringify(parsed))
             }
-        } catch (e) {
-            console.error('Error al clonar puntos de la firma:', e)
-        }
+        } catch (e) { /* silencioso */ }
         return null
     }
 
-    // Ajusta la resolución interna del canvas al tamaño real del contenedor (basado en ancho inmutable)
-    const resizeCanvas = useCallback(() => {
-        if (!sigPadRef.current || !containerRef.current) return
+    // Inicializar canvas UNA SOLA VEZ al montar
+    useEffect(() => {
+        if (!sigPadRef.current || !containerRef.current || initializedRef.current) return
+
         const canvas = sigPadRef.current.getCanvas()
         if (!canvas) return
 
@@ -32,47 +36,42 @@ const SignatureInput = forwardRef(function SignatureInput(
         if (rect.width === 0 || rect.height === 0) return
 
         const ratio = Math.max(window.devicePixelRatio || 1, 1)
-        const newWidth = Math.floor(rect.width * ratio)
-        // Usar la altura basada en la proporción del ancho (aspect ratio 2.5:1) para evitar compresión vertical por teclado
-        const targetHeight = Math.max(rect.height, Math.floor(rect.width / 2.5))
-        const newHeight = Math.floor(targetHeight * ratio)
+        canvas.width = Math.floor(rect.width * ratio)
+        canvas.height = Math.floor(rect.height * ratio)
+        const ctx = canvas.getContext('2d')
+        ctx.scale(ratio, ratio)
 
-        // Solo re-dimensionar si el ANCHO cambia (evita borrados por compresión vertical al enfocar campos o abrir teclado)
-        if (Math.abs(canvas.width - newWidth) > 5 || !canvas.width) {
-            let currentPoints = null
-            if (sigPadRef.current && !sigPadRef.current.isEmpty()) {
-                currentPoints = deepClonePoints(sigPadRef.current.toData())
-            }
-            if (!currentPoints && value) {
-                currentPoints = deepClonePoints(value)
-            }
+        initializedRef.current = true
 
-            canvas.width = newWidth
-            canvas.height = newHeight
-            const ctx = canvas.getContext('2d')
-            ctx.scale(ratio, ratio)
-
-            sigPadRef.current.clear()
-            if (currentPoints && currentPoints.length > 0) {
-                sigPadRef.current.fromData(currentPoints)
-            }
+        // Cargar datos iniciales si existen
+        const initialData = deepClonePoints(valueRef.current)
+        if (initialData && initialData.length > 0) {
+            sigPadRef.current.fromData(initialData)
         }
+    }, [])
+
+    // Cargar datos cuando value cambia desde AFUERA (ej: restaurar borrador)
+    useEffect(() => {
+        if (!sigPadRef.current || !initializedRef.current) return
+
+        const dataToLoad = deepClonePoints(value)
+
+        if (!dataToLoad || dataToLoad.length === 0) {
+            // No borrar el canvas si ya tiene trazos del usuario - solo borrar si value es explícitamente null/vacío
+            // Y el canvas tiene datos que no son del usuario (evitar borrar firma activa)
+            return
+        }
+
+        // Solo cargar si los datos son diferentes a lo que ya está dibujado
+        const currentData = sigPadRef.current.toData()
+        if (currentData && currentData.length > 0 && JSON.stringify(currentData) === JSON.stringify(dataToLoad)) {
+            return // Ya está dibujado, no hacer nada
+        }
+
+        sigPadRef.current.fromData(dataToLoad)
     }, [value])
 
-    useEffect(() => {
-        resizeCanvas()
-        const resizeObserver = new ResizeObserver(() => {
-            resizeCanvas()
-        })
-        if (containerRef.current) {
-            resizeObserver.observe(containerRef.current)
-        }
-        return () => {
-            resizeObserver.disconnect()
-        }
-    }, [resizeCanvas])
-
-    // Obtiene los datos de la firma en formato JSONB (array de trazos/puntos clonado)
+    // Obtiene los datos de la firma clonados
     const getSignatureData = () => {
         if (!sigPadRef.current || sigPadRef.current.isEmpty()) {
             return null
@@ -80,7 +79,7 @@ const SignatureInput = forwardRef(function SignatureInput(
         return deepClonePoints(sigPadRef.current.toData())
     }
 
-    // Expone métodos al ref padre para que el formulario solicitante obtenga los datos al guardar
+    // Expone métodos al ref padre
     useImperativeHandle(ref, () => ({
         getSignatureData,
         clear: handleClear,
@@ -88,21 +87,8 @@ const SignatureInput = forwardRef(function SignatureInput(
         getCanvas: () => sigPadRef.current?.getCanvas(),
     }))
 
-    // Cargar datos existentes si la propiedad 'value' viene provista desde afuera (ej: borrador o reset)
-    useEffect(() => {
-        if (!sigPadRef.current) return
-
-        const dataToLoad = deepClonePoints(value)
-        if (dataToLoad && dataToLoad.length > 0) {
-            const currentData = sigPadRef.current.toData()
-            if (JSON.stringify(currentData) !== JSON.stringify(dataToLoad)) {
-                sigPadRef.current.fromData(dataToLoad)
-            }
-        }
-    }, [value])
-
     const handleBegin = () => {
-        // Inicio de trazo
+        // Inicio de trazo - no hacer nada
     }
 
     // Se ejecuta al finalizar cada trazo en el lienzo
@@ -160,7 +146,3 @@ const SignatureInput = forwardRef(function SignatureInput(
 })
 
 export default SignatureInput
-
-
-
-
