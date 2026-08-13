@@ -8,11 +8,18 @@ const SignatureInput = forwardRef(function SignatureInput(
     const sigPadRef = useRef(null)
     const containerRef = useRef(null)
 
-    // Desenfoca cualquier elemento activo (como el textarea de notas) al interactuar con el lienzo
-    const handleCanvasInteraction = () => {
-        if (document.activeElement && document.activeElement !== document.body && typeof document.activeElement.blur === 'function') {
-            document.activeElement.blur()
+    // Clonador profundo seguro para evitar mutaciones de array compartidos con signature_pad
+    const deepClonePoints = (data) => {
+        if (!data) return null
+        try {
+            const parsed = typeof data === 'string' ? JSON.parse(data) : data
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                return JSON.parse(JSON.stringify(parsed))
+            }
+        } catch (e) {
+            console.error('Error al clonar puntos de la firma:', e)
         }
+        return null
     }
 
     // Ajusta la resolución interna del canvas al tamaño real del contenedor para evitar desfasamiento del puntero
@@ -29,14 +36,13 @@ const SignatureInput = forwardRef(function SignatureInput(
         const newHeight = Math.floor(rect.height * ratio)
 
         if (canvas.width !== newWidth || canvas.height !== newHeight) {
-            // Guardar datos actuales antes de reajustar dimensiones del canvas
+            // Respaldar en un NUEVO objeto clonado antes de llamar a clear() o cambiar dimensiones
             let currentPoints = null
             if (sigPadRef.current && !sigPadRef.current.isEmpty()) {
-                currentPoints = sigPadRef.current.toData()
-            } else if (value) {
-                try {
-                    currentPoints = typeof value === 'string' ? JSON.parse(value) : value
-                } catch (e) {}
+                currentPoints = deepClonePoints(sigPadRef.current.toData())
+            }
+            if (!currentPoints && value) {
+                currentPoints = deepClonePoints(value)
             }
 
             canvas.width = newWidth
@@ -45,7 +51,7 @@ const SignatureInput = forwardRef(function SignatureInput(
             ctx.scale(ratio, ratio)
 
             sigPadRef.current.clear()
-            if (currentPoints && Array.isArray(currentPoints) && currentPoints.length > 0) {
+            if (currentPoints && currentPoints.length > 0) {
                 sigPadRef.current.fromData(currentPoints)
             }
         }
@@ -64,12 +70,12 @@ const SignatureInput = forwardRef(function SignatureInput(
         }
     }, [resizeCanvas])
 
-    // Obtiene los datos de la firma en formato JSONB (array de trazos/puntos de react-signature-canvas)
+    // Obtiene los datos de la firma en formato JSONB (array de trazos/puntos clonado)
     const getSignatureData = () => {
         if (!sigPadRef.current || sigPadRef.current.isEmpty()) {
             return null
         }
-        return sigPadRef.current.toData()
+        return deepClonePoints(sigPadRef.current.toData())
     }
 
     // Expone métodos al ref padre para que el formulario solicitante obtenga los datos al guardar
@@ -80,36 +86,23 @@ const SignatureInput = forwardRef(function SignatureInput(
         getCanvas: () => sigPadRef.current?.getCanvas(),
     }))
 
-    // Cargar datos existentes si la propiedad 'value' viene provista
+    // Cargar datos existentes si la propiedad 'value' viene provista desde afuera (ej: borrador o reset)
     useEffect(() => {
         if (!sigPadRef.current) return
 
         resizeCanvas()
 
-        if (!value) {
-            if (!sigPadRef.current.isEmpty()) {
-                sigPadRef.current.clear()
+        const dataToLoad = deepClonePoints(value)
+        if (dataToLoad && dataToLoad.length > 0) {
+            const currentData = sigPadRef.current.toData()
+            if (JSON.stringify(currentData) !== JSON.stringify(dataToLoad)) {
+                sigPadRef.current.fromData(dataToLoad)
             }
-            return
-        }
-
-        try {
-            const dataToLoad = typeof value === 'string' ? JSON.parse(value) : value
-            if (Array.isArray(dataToLoad) && dataToLoad.length > 0) {
-                const currentData = sigPadRef.current.toData()
-                if (JSON.stringify(currentData) !== JSON.stringify(dataToLoad)) {
-                    sigPadRef.current.fromData(dataToLoad)
-                }
-            } else if (!sigPadRef.current.isEmpty()) {
-                sigPadRef.current.clear()
-            }
-        } catch (error) {
-            console.error('Error al cargar datos de la firma:', error)
         }
     }, [value, resizeCanvas])
 
     const handleBegin = () => {
-        handleCanvasInteraction()
+        // Inicio de trazo
     }
 
     // Se ejecuta al finalizar cada trazo en el lienzo
@@ -133,9 +126,6 @@ const SignatureInput = forwardRef(function SignatureInput(
         <div className={`space-y-2 ${className}`}>
             <div 
                 ref={containerRef}
-                onPointerDown={handleCanvasInteraction}
-                onTouchStart={handleCanvasInteraction}
-                onMouseDown={handleCanvasInteraction}
                 className="relative w-full h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-white overflow-hidden shadow-inner focus-within:border-primary transition-all"
             >
                 <SignatureCanvas
@@ -170,5 +160,6 @@ const SignatureInput = forwardRef(function SignatureInput(
 })
 
 export default SignatureInput
+
 
 
