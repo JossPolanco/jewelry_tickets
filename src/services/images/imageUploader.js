@@ -13,15 +13,22 @@ export const BUCKETS = {
 };
 
 // GENERA UN PATH ÚNICO PARA CADA IMAGEN
-const generateStoragePath = (userId, fileName) => {
+const generateStoragePath = (userId, fileName, mimeType) => {
     const now = new Date();
     const year = now.getFullYear();
     // Mes con padding: 06, 11, etc.
     const month = String(now.getMonth() + 1).padStart(2, "0");
     // UUID v4 simple usando crypto.randomUUID() nativo del navegador
     const uuid = crypto.randomUUID();
-    // Normaliza el nombre: minúsculas, sin espacios, solo extensión .webp
-    const safeFileName = `${uuid}.webp`;
+    
+    let ext = "webp";
+    if (mimeType === "image/jpeg" || mimeType === "image/jpg") ext = "jpg";
+    else if (mimeType === "image/png") ext = "png";
+    else if (fileName && fileName.includes(".")) {
+        const parts = fileName.split(".");
+        ext = parts[parts.length - 1].toLowerCase();
+    }
+    const safeFileName = `${uuid}.${ext}`;
 
     return `${userId}/${year}/${month}/${safeFileName}`;
 };
@@ -42,12 +49,12 @@ export const uploadImage = async (file, bucket, userId) => {
     }
 
     const targetBucket = BUCKETS.PHOTOS;
-    const storagePath = generateStoragePath(userId, file.name);
+    const storagePath = generateStoragePath(userId, file.name, file.type);
 
     const { error } = await supabaseClient.storage
         .from(targetBucket)
         .upload(storagePath, file, {
-            contentType: "image/webp",
+            contentType: file.type || "image/webp",
             upsert: false,
         });
 
