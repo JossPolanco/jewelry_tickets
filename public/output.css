@@ -949,6 +949,9 @@
       }
     }
   }
+  .pointer-events-auto {
+    pointer-events: auto;
+  }
   .pointer-events-none {
     pointer-events: none;
   }
@@ -1196,6 +1199,11 @@
       border-top: var(--border) solid var(--color-base-200);
       padding: 0.5rem;
     }
+  }
+  .visible {
+    visibility: visible;
+  }
+  @layer daisyui.l1.l2.l3 {
     .list {
       display: flex;
       flex-direction: column;
@@ -2378,8 +2386,8 @@
   .z-50 {
     z-index: 50;
   }
-  .z-\[9999\] {
-    z-index: 9999;
+  .z-\[99999\] {
+    z-index: 99999;
   }
   .col-span-2 {
     grid-column: span 2 / span 2;
@@ -4618,6 +4626,10 @@
     @supports (color: color-mix(in lab, red, red)) {
       --tw-ring-color: color-mix(in oklab, var(--color-primary) 30%, transparent);
     }
+  }
+  .blur {
+    --tw-blur: blur(8px);
+    filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,);
   }
   .blur-3xl {
     --tw-blur: blur(var(--blur-3xl));

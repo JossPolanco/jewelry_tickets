@@ -28,7 +28,7 @@ const orderSchema = z.object({
     customer_id: z.string().min(1, "ID de cliente requerido"),
     status: z.string().min(1, "Estado requerido"),
     total_estimated_cost: z.coerce.number({ invalid_type_error: "Ingresa un costo estimado válido" }).min(0, "El costo estimado debe ser 0 o mayor"),
-    advance_payment: z.coerce.number({ invalid_type_error: "Ingresa un anticipo válido" }).optional().default(0.00),
+    advance_payment: z.preprocess((val) => (val === "" || val === null || val === undefined || isNaN(val) ? 0 : Number(val)), z.number().min(0, "El anticipo debe ser 0 o mayor")).optional().default(0.00),
     signature_data: z.any().nullable().optional(),
     notes_general: z.string().optional().default("Sin observaciones"),
     promised_date: z.string().min(1, "Fecha prometida requerida"),
@@ -58,7 +58,7 @@ export default function CreateOrderWizard({ onClose, showToast }) {
             folio: "",
             status: "Pendiente",
             total_estimated_cost: 0.00,
-            advance_payment: 0.00,
+            advance_payment: "",
             signature_data: null,
             notes_general: "Sin observaciones",
             promised_date: "",
@@ -117,14 +117,14 @@ export default function CreateOrderWizard({ onClose, showToast }) {
     const handleClearDraft = () => {
         try {
             localStorage.removeItem(ORDER_WIZARD_DRAFT_KEY);
-        } catch (e) {}
+        } catch (e) { }
         reset({
             organization_id: organization?.organization_id || "",
             customer_id: "",
             folio: "",
             status: "Pendiente",
             total_estimated_cost: 0.00,
-            advance_payment: 0.00,
+            advance_payment: "",
             signature_data: null,
             notes_general: "Sin observaciones",
             promised_date: "",
@@ -168,7 +168,7 @@ export default function CreateOrderWizard({ onClose, showToast }) {
         onSuccess: () => {
             try {
                 localStorage.removeItem(ORDER_WIZARD_DRAFT_KEY);
-            } catch (e) {}
+            } catch (e) { }
 
             if (showToast) {
                 showToast("Orden guardada exitosamente", "success");

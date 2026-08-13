@@ -8,6 +8,13 @@ const SignatureInput = forwardRef(function SignatureInput(
     const sigPadRef = useRef(null)
     const containerRef = useRef(null)
 
+    // Desenfoca cualquier elemento activo (como el textarea de notas) al interactuar con el lienzo
+    const handleCanvasInteraction = () => {
+        if (document.activeElement && document.activeElement !== document.body && typeof document.activeElement.blur === 'function') {
+            document.activeElement.blur()
+        }
+    }
+
     // Ajusta la resolución interna del canvas al tamaño real del contenedor para evitar desfasamiento del puntero
     const resizeCanvas = () => {
         if (!sigPadRef.current || !containerRef.current) return
@@ -30,7 +37,7 @@ const SignatureInput = forwardRef(function SignatureInput(
             ctx.scale(ratio, ratio)
 
             sigPadRef.current.clear()
-            if (savedData) {
+            if (savedData && savedData.length > 0) {
                 sigPadRef.current.fromData(savedData)
             }
         }
@@ -87,6 +94,10 @@ const SignatureInput = forwardRef(function SignatureInput(
         }
     }, [value])
 
+    const handleBegin = () => {
+        handleCanvasInteraction()
+    }
+
     // Se ejecuta al finalizar cada trazo en el lienzo
     const handleEnd = () => {
         const data = getSignatureData()
@@ -108,11 +119,15 @@ const SignatureInput = forwardRef(function SignatureInput(
         <div className={`space-y-2 ${className}`}>
             <div 
                 ref={containerRef}
+                onPointerDown={handleCanvasInteraction}
+                onTouchStart={handleCanvasInteraction}
+                onMouseDown={handleCanvasInteraction}
                 className="relative w-full h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-white overflow-hidden shadow-inner focus-within:border-primary transition-all"
             >
                 <SignatureCanvas
                     ref={sigPadRef}
                     penColor="black"
+                    onBegin={handleBegin}
                     onEnd={handleEnd}
                     canvasProps={{
                         className: 'w-full h-full block cursor-crosshair touch-none bg-white sigCanvas'
