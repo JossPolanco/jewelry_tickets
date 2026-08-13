@@ -22,7 +22,7 @@ const SignatureInput = forwardRef(function SignatureInput(
         return null
     }
 
-    // Ajusta la resolución interna del canvas al tamaño real del contenedor para evitar desfasamiento del puntero
+    // Ajusta la resolución interna del canvas al tamaño real del contenedor (basado en ancho inmutable)
     const resizeCanvas = useCallback(() => {
         if (!sigPadRef.current || !containerRef.current) return
         const canvas = sigPadRef.current.getCanvas()
@@ -33,10 +33,12 @@ const SignatureInput = forwardRef(function SignatureInput(
 
         const ratio = Math.max(window.devicePixelRatio || 1, 1)
         const newWidth = Math.floor(rect.width * ratio)
-        const newHeight = Math.floor(rect.height * ratio)
+        // Usar la altura basada en la proporción del ancho (aspect ratio 2.5:1) para evitar compresión vertical por teclado
+        const targetHeight = Math.max(rect.height, Math.floor(rect.width / 2.5))
+        const newHeight = Math.floor(targetHeight * ratio)
 
-        if (canvas.width !== newWidth || canvas.height !== newHeight) {
-            // Respaldar en un NUEVO objeto clonado antes de llamar a clear() o cambiar dimensiones
+        // Solo re-dimensionar si el ANCHO cambia (evita borrados por compresión vertical al enfocar campos o abrir teclado)
+        if (Math.abs(canvas.width - newWidth) > 5 || !canvas.width) {
             let currentPoints = null
             if (sigPadRef.current && !sigPadRef.current.isEmpty()) {
                 currentPoints = deepClonePoints(sigPadRef.current.toData())
@@ -90,8 +92,6 @@ const SignatureInput = forwardRef(function SignatureInput(
     useEffect(() => {
         if (!sigPadRef.current) return
 
-        resizeCanvas()
-
         const dataToLoad = deepClonePoints(value)
         if (dataToLoad && dataToLoad.length > 0) {
             const currentData = sigPadRef.current.toData()
@@ -99,7 +99,7 @@ const SignatureInput = forwardRef(function SignatureInput(
                 sigPadRef.current.fromData(dataToLoad)
             }
         }
-    }, [value, resizeCanvas])
+    }, [value])
 
     const handleBegin = () => {
         // Inicio de trazo
@@ -160,6 +160,7 @@ const SignatureInput = forwardRef(function SignatureInput(
 })
 
 export default SignatureInput
+
 
 
 
