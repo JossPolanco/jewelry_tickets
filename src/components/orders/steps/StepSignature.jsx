@@ -1,10 +1,31 @@
-import React from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import { PenTool, FileText } from 'lucide-react';
 import SignatureInput from '@/components/SignatureInput';
-import { useFormContext, Controller } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
 
 export default function StepSignature() {
-    const { register, control } = useFormContext();
+    const { register, setValue, getValues, watch } = useFormContext();
+    const signatureRef = useRef(null);
+    const hasUserDrawn = useRef(false);
+
+    // Callback estable que NUNCA cambia de identidad - usa ref para setValue
+    const setValueRef = useRef(setValue);
+    setValueRef.current = setValue;
+
+    const handleSignatureChange = useRef((data) => {
+        hasUserDrawn.current = true;
+        setValueRef.current('signature_data', data, { shouldDirty: true });
+    }).current;
+
+    // Detectar restauración de borrador: watch solo dispara re-render de StepSignature,
+    // pero SignatureInput está blindado con React.memo(() => true)
+    const watchedSignature = watch('signature_data');
+
+    useEffect(() => {
+        if (watchedSignature && !hasUserDrawn.current && signatureRef.current?.loadData) {
+            signatureRef.current.loadData(watchedSignature);
+        }
+    }, [watchedSignature]);
 
     return (
         <div className="space-y-4 py-2 animate-fade-in">
@@ -37,19 +58,13 @@ export default function StepSignature() {
                     <span className="label-text font-medium">Firma Digital del Cliente</span>
                 </label>
                 <div className="border border-base-300 rounded-2xl p-3 bg-base-200/30">
-                    <Controller
-                        control={control}
-                        name="signature_data"
-                        render={({ field }) => (
-                            <SignatureInput
-                                value={field.value}
-                                onChange={field.onChange}
-                            />
-                        )}
+                    <SignatureInput
+                        ref={signatureRef}
+                        defaultValue={getValues('signature_data')}
+                        onChange={handleSignatureChange}
                     />
                 </div>
             </div>
         </div>
     );
 }
-
