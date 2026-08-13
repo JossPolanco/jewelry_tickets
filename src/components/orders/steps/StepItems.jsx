@@ -235,6 +235,7 @@ export default function StepItems() {
         service_requested: '',
         material_details: '',
         unit_price: '',
+        price_detail: '',
         photos: [],
         photo_ids: []
     };
@@ -290,12 +291,13 @@ export default function StepItems() {
         }
 
         setFormData({
-            item_type: itemToEdit.item_type || '',
+            item_type: ITEM_TYPES[itemToEdit.item_type] || itemToEdit.item_type || '',
             description: itemToEdit.description || '',
             initial_weight_grams: itemToEdit.initial_weight_grams !== undefined ? String(itemToEdit.initial_weight_grams) : '',
-            service_requested: itemToEdit.service_requested || '',
+            service_requested: SERVICE_TYPES[itemToEdit.service_requested] || itemToEdit.service_requested || '',
             material_details: itemToEdit.material_details || '',
             unit_price: itemToEdit.unit_price !== undefined ? String(itemToEdit.unit_price) : '',
+            price_detail: itemToEdit.price_detail || '',
             photos: existingPhotos,
             photo_ids: existingPhotoIds
         });
@@ -316,14 +318,14 @@ export default function StepItems() {
         if (e) e.preventDefault();
 
         const errorsObj = {};
-        if (!formData.item_type) errorsObj.item_type = 'Selecciona un tipo de joya';
+        if (!formData.item_type?.trim()) errorsObj.item_type = 'Ingresa o selecciona un tipo de joya';
         if (!formData.description?.trim()) errorsObj.description = 'Ingresa la descripción de la pieza';
 
         const parsedWeight = parseFloat(formData.initial_weight_grams);
         if (formData.initial_weight_grams === '' || isNaN(parsedWeight) || parsedWeight < 0) {
             errorsObj.initial_weight_grams = 'Ingresa un peso válido (0 o mayor)';
         }
-        if (!formData.service_requested) errorsObj.service_requested = 'Selecciona el tipo de servicio';
+        if (!formData.service_requested?.trim()) errorsObj.service_requested = 'Ingresa o selecciona el tipo de servicio';
 
         const parsedPrice = parseFloat(formData.unit_price);
         if (formData.unit_price === '' || isNaN(parsedPrice) || parsedPrice < 0) {
@@ -339,12 +341,13 @@ export default function StepItems() {
         const photoIds = currentPhotos.map((p) => p.id);
 
         const itemPayload = {
-            item_type: formData.item_type,
+            item_type: formData.item_type.trim(),
             description: formData.description.trim(),
             initial_weight_grams: parsedWeight,
-            service_requested: formData.service_requested,
+            service_requested: formData.service_requested.trim(),
             material_details: formData.material_details?.trim() || 'Sin observaciones',
             unit_price: parsedPrice,
+            price_detail: formData.price_detail?.trim() || null,
             photo_ids: photoIds,
             photos: currentPhotos
         };
@@ -549,6 +552,15 @@ export default function StepItems() {
                                         <DollarSign className="w-3.5 h-3.5 shrink-0" />
                                         {(parseFloat(item.unit_price) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </span>
+                                    {item.price_detail && (
+                                        <>
+                                            <span className="text-base-content/30">•</span>
+                                            <span className="italic text-base-content/60 truncate max-w-40 sm:max-w-xs flex flex-row gap-1">
+                                                <DollarSign className="w-3.5 h-3.5 shrink-0 text-primary/70" />
+                                                {item.price_detail}
+                                            </span>
+                                        </>
+                                    )}
                                     {item.material_details && item.material_details !== 'Sin observaciones' && (
                                         <>
                                             <span className="text-base-content/30">•</span>
@@ -598,23 +610,45 @@ export default function StepItems() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {/* TIPO DE JOYA */}
                         <div className="form-control w-full">
-                            <label className="label py-1">
+                            <label className="label py-1 flex items-center justify-between">
                                 <span className="label-text text-xs font-semibold text-base-content">
                                     Tipo de Joya <span className="text-error">*</span>
                                 </span>
+                                <span className="text-[10px] text-base-content/50 font-normal">
+                                    Escribe o selecciona
+                                </span>
                             </label>
                             <div className="relative">
-                                <select
-                                    className={`select select-bordered w-full h-11 pl-9 text-xs sm:text-sm font-medium rounded-xl border-base-300 focus:border-primary ${localErrors.item_type ? 'border-error' : ''}`}
+                                <input
+                                    type="text"
+                                    list="item-types-list"
+                                    placeholder="Ej: Anillo, Arete, Reloj..."
+                                    className={`input input-bordered w-full h-11 pl-9 pr-3 text-xs sm:text-sm font-medium rounded-xl border-base-300 focus:border-primary ${localErrors.item_type ? 'border-error' : ''}`}
                                     value={formData.item_type}
                                     onChange={(e) => setFormData({ ...formData, item_type: e.target.value })}
-                                >
-                                    <option value="" disabled>Selecciona tipo...</option>
-                                    {Object.entries(ITEM_TYPES).map(([key, value]) => (
-                                        <option key={key} value={key}>{value}</option>
-                                    ))}
-                                </select>
+                                />
                                 <Tag className="w-4 h-4 absolute left-3 top-3.5 text-base-content/40 pointer-events-none" />
+                                <datalist id="item-types-list">
+                                    {Object.values(ITEM_TYPES).map((val) => (
+                                        <option key={val} value={val} />
+                                    ))}
+                                </datalist>
+                            </div>
+                            {/* Sugerencias rápidas */}
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                                {Object.values(ITEM_TYPES).map((val) => (
+                                    <button
+                                        key={val}
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, item_type: val })}
+                                        className={`btn btn-xs rounded-lg text-[10px] font-medium transition-all ${formData.item_type === val
+                                                ? 'btn-primary text-white shadow-2xs'
+                                                : 'btn-ghost bg-base-200/70 hover:bg-base-200 text-base-content/70'
+                                            }`}
+                                    >
+                                        {val}
+                                    </button>
+                                ))}
                             </div>
                             {localErrors.item_type && (
                                 <span className="text-xs text-error mt-0.5 font-medium">{localErrors.item_type}</span>
@@ -623,23 +657,45 @@ export default function StepItems() {
 
                         {/* TIPO DE SERVICIO */}
                         <div className="form-control w-full">
-                            <label className="label py-1">
+                            <label className="label py-1 flex items-center justify-between">
                                 <span className="label-text text-xs font-semibold text-base-content">
                                     Tipo de Servicio <span className="text-error">*</span>
                                 </span>
+                                <span className="text-[10px] text-base-content/50 font-normal">
+                                    Escribe o selecciona
+                                </span>
                             </label>
                             <div className="relative">
-                                <select
-                                    className={`select select-bordered w-full h-11 pl-9 text-xs sm:text-sm font-medium rounded-xl border-base-300 focus:border-primary ${localErrors.service_requested ? 'border-error' : ''}`}
+                                <input
+                                    type="text"
+                                    list="service-types-list"
+                                    placeholder="Ej: Reparación, Ajuste, Grabado..."
+                                    className={`input input-bordered w-full h-11 pl-9 pr-3 text-xs sm:text-sm font-medium rounded-xl border-base-300 focus:border-primary ${localErrors.service_requested ? 'border-error' : ''}`}
                                     value={formData.service_requested}
                                     onChange={(e) => setFormData({ ...formData, service_requested: e.target.value })}
-                                >
-                                    <option value="" disabled>Selecciona servicio...</option>
-                                    {Object.entries(SERVICE_TYPES).map(([key, value]) => (
-                                        <option key={key} value={key}>{value}</option>
-                                    ))}
-                                </select>
+                                />
                                 <Wrench className="w-4 h-4 absolute left-3 top-3.5 text-base-content/40 pointer-events-none" />
+                                <datalist id="service-types-list">
+                                    {Object.values(SERVICE_TYPES).map((val) => (
+                                        <option key={val} value={val} />
+                                    ))}
+                                </datalist>
+                            </div>
+                            {/* Sugerencias rápidas */}
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                                {Object.values(SERVICE_TYPES).map((val) => (
+                                    <button
+                                        key={val}
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, service_requested: val })}
+                                        className={`btn btn-xs rounded-lg text-[10px] font-medium transition-all ${formData.service_requested === val
+                                                ? 'btn-primary text-white shadow-2xs'
+                                                : 'btn-ghost bg-base-200/70 hover:bg-base-200 text-base-content/70'
+                                            }`}
+                                    >
+                                        {val}
+                                    </button>
+                                ))}
                             </div>
                             {localErrors.service_requested && (
                                 <span className="text-xs text-error mt-0.5 font-medium">{localErrors.service_requested}</span>
@@ -714,26 +770,47 @@ export default function StepItems() {
                     </div>
 
                     {/* PRECIO UNITARIO */}
-                    <div className="form-control w-full">
-                        <label className="label py-1">
-                            <span className="label-text text-xs font-semibold text-base-content">
-                                Precio Unitario Estimado
-                            </span>
-                        </label>
-                        <div className="relative">
-                            <span className="absolute left-3 top-3.5 text-base-content/40 font-medium">$</span>
-                            <input
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                className="input input-bordered w-full pl-8 pr-3 text-xs sm:text-sm font-medium rounded-xl border-base-300 focus:border-primary"
-                                value={formData.unit_price}
-                                onChange={(e) => setFormData({ ...formData, unit_price: e.target.value })}
-                            />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="form-control w-full">
+                            <label className="label py-1">
+                                <span className="label-text text-xs font-semibold text-base-content">
+                                    Precio Unitario Estimado
+                                </span>
+                            </label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-3.5 text-base-content/40 font-medium">$</span>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    className="input input-bordered w-full pl-8 pr-3 text-xs sm:text-sm font-medium rounded-xl border-base-300 focus:border-primary"
+                                    value={formData.unit_price}
+                                    onChange={(e) => setFormData({ ...formData, unit_price: e.target.value })}
+                                />
+                            </div>
+                            {localErrors.unit_price && (
+                                <span className="text-xs text-error mt-0.5 font-medium">{localErrors.unit_price}</span>
+                            )}
                         </div>
-                        {localErrors.unit_price && (
-                            <span className="text-xs text-error mt-0.5 font-medium">{localErrors.unit_price}</span>
-                        )}
+
+                        {/* DESGLOSE / JUSTIFICACIÓN DEL PRECIO */}
+                        <div className="form-control w-full">
+                            <label className="label py-1 flex items-center justify-between">
+                                <span className="label-text text-xs font-semibold text-base-content">
+                                    Desglose del Precio (opcional)
+                                </span>
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Ej: 2000 mas 450 de mano de obra por 1 gramo extra"
+                                    className="input input-bordered w-full pl-9 pr-3 text-xs sm:text-sm font-medium rounded-xl border-base-300 focus:border-primary"
+                                    value={formData.price_detail || ''}
+                                    onChange={(e) => setFormData({ ...formData, price_detail: e.target.value })}
+                                />
+                                <DollarSign className="w-4 h-4 absolute left-3 top-3.5 text-base-content/40 pointer-events-none" />
+                            </div>
+                        </div>
                     </div>
 
                     {/* SECCIÓN DE SUBIDA Y GESTIÓN DE FOTOGRAFÍAS (MÁX 2) */}

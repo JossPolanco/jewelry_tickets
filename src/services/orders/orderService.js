@@ -32,7 +32,7 @@ export async function createOrder({ organization_id, customer_id, status, total_
     return data;
 }
 
-async function createOrderItems({ order_id, item_type, description, initial_weight_grams, material_details, service_requested, unit_price, photo_ids }) {
+async function createOrderItems({ order_id, item_type, description, initial_weight_grams, material_details, service_requested, unit_price, price_detail, photo_ids }) {
     const { data, error } = await supabaseClient
         .from("tbl_order_items")
         .insert({
@@ -43,6 +43,7 @@ async function createOrderItems({ order_id, item_type, description, initial_weig
             material_details,
             service_requested,
             unit_price,
+            price_detail,
             photo_ids,
         });
 

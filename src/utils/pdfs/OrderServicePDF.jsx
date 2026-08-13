@@ -433,6 +433,26 @@ export default function OrderServicePDF({ order, itemPhotosMap = {}, termsAndCon
     const deliverySignatureUrl = convertSignatureToSvgDataUrl(order.delivery_signature_data);
     const isDelivered = Boolean(order.delivered_at && order.delivery_signature_data) || order.status?.toLowerCase() === 'entregado';
 
+    const deliveryPhotos = [];
+    if (Array.isArray(order.delivery_photos_urls)) {
+        order.delivery_photos_urls.forEach((url) => { if (url) deliveryPhotos.push(url); });
+    }
+    if (deliveryPhotos.length === 0 && Array.isArray(order.delivery_photo_ids) && itemPhotosMap) {
+        order.delivery_photo_ids.forEach((pId) => {
+            const entry = itemPhotosMap[pId];
+            const src = typeof entry === 'string' ? entry : entry?.dataUrl || entry?.signedUrl || entry?.url;
+            if (src) deliveryPhotos.push(src);
+        });
+    }
+    if (deliveryPhotos.length === 0 && Array.isArray(order.delivery_photos)) {
+        order.delivery_photos.forEach((p) => {
+            const src = typeof p === 'string' ? p : p?.dataUrl || p?.signedUrl || p?.url;
+            if (src) deliveryPhotos.push(src);
+        });
+    }
+
+    const uniqueDeliveryPhotos = [...new Set(deliveryPhotos)];
+
     const totalCost = Number(order.total_estimated_cost) || 0;
     const advance = Number(order.advance_payment) || 0;
     const balance = Math.max(0, totalCost - advance);
@@ -540,12 +560,19 @@ export default function OrderServicePDF({ order, itemPhotosMap = {}, termsAndCon
                                     <Text style={styles.colPrice}>{formatCurrency(item.unit_price)}</Text>
                                 </View>
 
-                                {(item.description || photos.length > 0) ? (
+                                {(item.description || item.price_detail || photos.length > 0) ? (
                                     <View style={styles.itemDetailSection}>
                                         {item.description ? (
                                             <View style={styles.descContainer}>
                                                 <Text style={styles.descLabel}>Observaciones de la pieza:</Text>
                                                 <Text style={styles.itemDescription}>{item.description}</Text>
+                                            </View>
+                                        ) : null}
+
+                                        {item.price_detail ? (
+                                            <View style={styles.descContainer}>
+                                                <Text style={styles.descLabel}>Desglose / Justificación del Precio:</Text>
+                                                <Text style={styles.itemDescription}>{item.price_detail}</Text>
                                             </View>
                                         ) : null}
 
@@ -597,7 +624,7 @@ export default function OrderServicePDF({ order, itemPhotosMap = {}, termsAndCon
                 </View>
 
                 {/* BLOQUE DE CONFORMIDAD DE ENTREGA Y FINIQUITO (SI APLICA) */}
-                {isDelivered ? (
+                {isDelivered || uniqueDeliveryPhotos.length > 0 ? (
                     <View style={styles.deliveryCard} wrap={false}>
                         <View style={styles.deliveryHeaderRow}>
                             <Text style={styles.deliveryTitle}>CONFORMIDAD DE ENTREGA Y FINIQUITO</Text>
@@ -610,6 +637,22 @@ export default function OrderServicePDF({ order, itemPhotosMap = {}, termsAndCon
                             <Text style={styles.deliveryDateText}>
                                 Fecha y hora de entrega: {formatDateTime(order.delivered_at)}
                             </Text>
+                        ) : null}
+
+                        {uniqueDeliveryPhotos.length > 0 ? (
+                            <View style={{ marginTop: 6 }}>
+                                <Text style={[styles.evidenceLabel, { color: '#065F46', marginBottom: 4 }]}>
+                                    Evidencia Fotográfica de Entrega ({uniqueDeliveryPhotos.length} foto{uniqueDeliveryPhotos.length > 1 ? 's' : ''}):
+                                </Text>
+                                <View style={styles.photosGrid}>
+                                    {uniqueDeliveryPhotos.slice(0, 2).map((imgUrl, imgIdx) => (
+                                        <View key={imgIdx} style={[styles.photoCard, { borderColor: '#A7F3D0', backgroundColor: '#FFFFFF' }]}>
+                                            <Image src={imgUrl} style={styles.itemPhotoLarge} />
+                                            <Text style={[styles.photoSubLabel, { color: '#047857' }]}>Foto de Entrega #{imgIdx + 1}</Text>
+                                        </View>
+                                    ))}
+                                </View>
+                            </View>
                         ) : null}
                     </View>
                 ) : null}

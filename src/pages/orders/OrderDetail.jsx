@@ -1,7 +1,7 @@
 import {
     ArrowLeft, Edit3, Calendar, User, Phone, Mail, Package, Scale, DollarSign, Hammer, MessageSquare,
     Clock, AlertCircle, Plus, Trash2, Camera, Loader2, X, Send, RefreshCw, PenTool, ShieldCheck, Image as ImageIcon,
-    Receipt, ChevronDown, ChevronUp, PackageCheck, CheckCircle2
+    Receipt, ChevronDown, ChevronUp, PackageCheck, CheckCircle2, Tag, Wrench
 } from 'lucide-react';
 import { getOrderDetail, getOrderItems, updateOrder, updateOrderItem, createOrderItem, deleteOrderItem, getTermsAndConditions } from '@/services/orders';
 import { getPaymentsByOrderId, createPayment, deletePayment } from '@/services/payments';
@@ -383,9 +383,8 @@ export default function OrderDetail() {
     });
 
     const handleOpenAddPaymentModal = () => {
-        const currentPending = Math.max(0, (parseFloat(order?.total_estimated_cost) || 0) - (parseFloat(order?.advance_payment) || 0));
         setPaymentForm({
-            amount: currentPending > 0 ? currentPending.toString() : '',
+            amount: '',
             payment_method: 'efectivo',
             notes: ''
         });
@@ -396,10 +395,15 @@ export default function OrderDetail() {
     const handleSavePayment = (e) => {
         e.preventDefault();
         const errors = {};
-        const numAmount = parseFloat(paymentForm.amount);
-        if (!paymentForm.amount || isNaN(numAmount) || numAmount <= 0) {
+        const rawAmount = paymentForm.amount?.toString().trim();
+        const numAmount = parseFloat(rawAmount);
+
+        if (!rawAmount) {
+            errors.amount = 'El monto del pago es obligatorio';
+        } else if (isNaN(numAmount) || numAmount <= 0) {
             errors.amount = 'El monto debe ser un número mayor a 0';
         }
+
         if (Object.keys(errors).length > 0) {
             setPaymentErrors(errors);
             return;
@@ -460,6 +464,7 @@ export default function OrderDetail() {
 
         let isMounted = true;
         const loadDeliveryPhotos = async () => {
+            const { getPdfPhotoDataUrl } = await import('../../utils/pdfs/OrderServicePDF');
             const urls = [];
             for (const pId of orderData.delivery_photo_ids) {
                 try {
@@ -467,8 +472,11 @@ export default function OrderDetail() {
                     if (metaRes?.success && metaRes.data?.image) {
                         const img = metaRes.data.image;
                         const signedRes = await getSignedUrl(img.storage_path, img.bucket || BUCKETS.PHOTOS);
-                        if (signedRes?.success && signedRes.data?.signedUrl) {
-                            urls.push(signedRes.data.signedUrl);
+                        const signedUrl = signedRes?.success ? signedRes.data?.signedUrl : null;
+                        const dataUrl = await getPdfPhotoDataUrl(img.storage_path, img.bucket || BUCKETS.PHOTOS);
+                        const finalUrl = dataUrl || signedUrl;
+                        if (finalUrl) {
+                            urls.push(finalUrl);
                         }
                     }
                 } catch (err) {
@@ -563,10 +571,11 @@ export default function OrderDetail() {
         });
         return {
             ...order,
+            delivery_photos_urls: deliveryPhotosUrls,
             order_items: orderItems,
             items: orderItems
         };
-    }, [order, items, resolvedItemPhotos]);
+    }, [order, items, resolvedItemPhotos, deliveryPhotosUrls]);
 
     // MUTACIÓN PARA ACTUALIZAR DATOS DE LA ORDEN DE SERVICIO
     const [orderForm, setOrderForm] = useState({
@@ -622,6 +631,7 @@ export default function OrderDetail() {
         initial_weight_grams: '',
         material_details: '',
         unit_price: '',
+        price_detail: '',
         photos: []
     });
     const [itemErrors, setItemErrors] = useState({});
@@ -639,6 +649,7 @@ export default function OrderDetail() {
             initial_weight_grams: '',
             material_details: '',
             unit_price: '',
+            price_detail: '',
             photos: []
         });
         setItemErrors({});
@@ -649,12 +660,13 @@ export default function OrderDetail() {
         setItemEditing(item);
         const photosForItem = resolvedItemPhotos[item.id] || [];
         setItemForm({
-            item_type: item.item_type || '',
-            service_requested: item.service_requested || '',
+            item_type: ITEM_TYPES[item.item_type] || item.item_type || '',
+            service_requested: SERVICE_TYPES[item.service_requested] || item.service_requested || '',
             description: item.description || '',
             initial_weight_grams: item.initial_weight_grams !== undefined ? String(item.initial_weight_grams) : '',
             material_details: item.material_details || '',
             unit_price: item.unit_price !== undefined ? String(item.unit_price) : '',
+            price_detail: item.price_detail || '',
             photos: photosForItem
         });
         setItemErrors({});
@@ -701,8 +713,8 @@ export default function OrderDetail() {
         e.preventDefault();
         const errs = {};
 
-        if (!itemForm.item_type) errs.item_type = 'Selecciona el tipo de joya';
-        if (!itemForm.service_requested) errs.service_requested = 'Selecciona el servicio';
+        if (!itemForm.item_type?.trim()) errs.item_type = 'Ingresa o selecciona el tipo de joya';
+        if (!itemForm.service_requested?.trim()) errs.service_requested = 'Ingresa o selecciona el servicio';
         if (!itemForm.description?.trim()) errs.description = 'Ingresa la descripción de la pieza';
 
         const weight = parseFloat(itemForm.initial_weight_grams);
@@ -723,12 +735,13 @@ export default function OrderDetail() {
         const photoIds = (itemForm.photos || []).map((p) => p.id);
 
         saveItemMutation.mutate({
-            item_type: itemForm.item_type,
-            service_requested: itemForm.service_requested,
+            item_type: itemForm.item_type.trim(),
+            service_requested: itemForm.service_requested.trim(),
             description: itemForm.description.trim(),
             initial_weight_grams: weight,
             material_details: itemForm.material_details?.trim() || 'Sin observaciones',
             unit_price: price,
+            price_detail: itemForm.price_detail?.trim() || null,
             photo_ids: photoIds
         });
     };
@@ -1352,6 +1365,11 @@ export default function OrderDetail() {
                                                             <DollarSign className="w-3.5 h-3.5" />
                                                             {formatCurrency(item.unit_price)}
                                                         </span>
+                                                        {item.price_detail && (
+                                                            <span className="text-[11px] italic text-base-content/70 block mt-0.5" title="Desglose del precio">
+                                                                {item.price_detail}
+                                                            </span>
+                                                        )}
                                                     </div>
 
                                                     <div className="col-span-2 sm:col-span-1">
@@ -1536,21 +1554,46 @@ export default function OrderDetail() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {/* TIPO DE JOYA */}
                         <div className="form-control w-full">
-                            <label className="label py-1">
+                            <label className="label py-1 flex items-center justify-between">
                                 <span className="label-text text-xs font-semibold text-base-content">
                                     Tipo de Joya <span className="text-error">*</span>
                                 </span>
+                                <span className="text-[10px] text-base-content/50 font-normal">
+                                    Escribe o selecciona
+                                </span>
                             </label>
-                            <select
-                                className={`select select-bordered w-full h-11 text-xs sm:text-sm font-medium rounded-xl border-base-300 focus:border-primary ${itemErrors.item_type ? 'border-error' : ''}`}
-                                value={itemForm.item_type}
-                                onChange={(e) => setItemForm({ ...itemForm, item_type: e.target.value })}
-                            >
-                                <option value="" disabled>Selecciona tipo...</option>
-                                {Object.entries(ITEM_TYPES).map(([key, value]) => (
-                                    <option key={key} value={key}>{value}</option>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    list="detail-item-types-list"
+                                    placeholder="Ej: Anillo, Arete, Reloj..."
+                                    className={`input input-bordered w-full h-11 pl-9 pr-3 text-xs sm:text-sm font-medium rounded-xl border-base-300 focus:border-primary ${itemErrors.item_type ? 'border-error' : ''}`}
+                                    value={itemForm.item_type}
+                                    onChange={(e) => setItemForm({ ...itemForm, item_type: e.target.value })}
+                                />
+                                <Tag className="w-4 h-4 absolute left-3 top-3.5 text-base-content/40 pointer-events-none" />
+                                <datalist id="detail-item-types-list">
+                                    {Object.values(ITEM_TYPES).map((val) => (
+                                        <option key={val} value={val} />
+                                    ))}
+                                </datalist>
+                            </div>
+                            {/* Sugerencias rápidas */}
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                                {Object.values(ITEM_TYPES).map((val) => (
+                                    <button
+                                        key={val}
+                                        type="button"
+                                        onClick={() => setItemForm({ ...itemForm, item_type: val })}
+                                        className={`btn btn-xs rounded-lg text-[10px] font-medium transition-all ${itemForm.item_type === val
+                                                ? 'btn-primary text-white shadow-2xs'
+                                                : 'btn-ghost bg-base-200/70 hover:bg-base-200 text-base-content/70'
+                                            }`}
+                                    >
+                                        {val}
+                                    </button>
                                 ))}
-                            </select>
+                            </div>
                             {itemErrors.item_type && (
                                 <span className="text-xs text-error mt-0.5 font-medium">{itemErrors.item_type}</span>
                             )}
@@ -1558,21 +1601,46 @@ export default function OrderDetail() {
 
                         {/* TIPO DE SERVICIO */}
                         <div className="form-control w-full">
-                            <label className="label py-1">
+                            <label className="label py-1 flex items-center justify-between">
                                 <span className="label-text text-xs font-semibold text-base-content">
                                     Tipo de Servicio <span className="text-error">*</span>
                                 </span>
+                                <span className="text-[10px] text-base-content/50 font-normal">
+                                    Escribe o selecciona
+                                </span>
                             </label>
-                            <select
-                                className={`select select-bordered w-full h-11 text-xs sm:text-sm font-medium rounded-xl border-base-300 focus:border-primary ${itemErrors.service_requested ? 'border-error' : ''}`}
-                                value={itemForm.service_requested}
-                                onChange={(e) => setItemForm({ ...itemForm, service_requested: e.target.value })}
-                            >
-                                <option value="" disabled>Selecciona servicio...</option>
-                                {Object.entries(SERVICE_TYPES).map(([key, value]) => (
-                                    <option key={key} value={key}>{value}</option>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    list="detail-service-types-list"
+                                    placeholder="Ej: Reparación, Ajuste, Grabado..."
+                                    className={`input input-bordered w-full h-11 pl-9 pr-3 text-xs sm:text-sm font-medium rounded-xl border-base-300 focus:border-primary ${itemErrors.service_requested ? 'border-error' : ''}`}
+                                    value={itemForm.service_requested}
+                                    onChange={(e) => setItemForm({ ...itemForm, service_requested: e.target.value })}
+                                />
+                                <Wrench className="w-4 h-4 absolute left-3 top-3.5 text-base-content/40 pointer-events-none" />
+                                <datalist id="detail-service-types-list">
+                                    {Object.values(SERVICE_TYPES).map((val) => (
+                                        <option key={val} value={val} />
+                                    ))}
+                                </datalist>
+                            </div>
+                            {/* Sugerencias rápidas */}
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                                {Object.values(SERVICE_TYPES).map((val) => (
+                                    <button
+                                        key={val}
+                                        type="button"
+                                        onClick={() => setItemForm({ ...itemForm, service_requested: val })}
+                                        className={`btn btn-xs rounded-lg text-[10px] font-medium transition-all ${itemForm.service_requested === val
+                                                ? 'btn-primary text-white shadow-2xs'
+                                                : 'btn-ghost bg-base-200/70 hover:bg-base-200 text-base-content/70'
+                                            }`}
+                                    >
+                                        {val}
+                                    </button>
                                 ))}
-                            </select>
+                            </div>
                             {itemErrors.service_requested && (
                                 <span className="text-xs text-error mt-0.5 font-medium">{itemErrors.service_requested}</span>
                             )}
@@ -1621,25 +1689,42 @@ export default function OrderDetail() {
                         </div>
                     </div>
 
-                    {/* PRECIO UNITARIO */}
-                    <div className="form-control w-full">
-                        <label className="label py-1">
-                            <span className="label-text text-xs font-semibold text-base-content">
-                                Precio Unitario ($) <span className="text-error">*</span>
-                            </span>
-                        </label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            placeholder="0.00"
-                            className={`input input-bordered w-full h-11 text-xs sm:text-sm font-medium rounded-xl border-base-300 focus:border-primary ${itemErrors.unit_price ? 'border-error' : ''}`}
-                            value={itemForm.unit_price}
-                            onChange={(e) => setItemForm({ ...itemForm, unit_price: e.target.value })}
-                        />
-                        {itemErrors.unit_price && (
-                            <span className="text-xs text-error mt-0.5 font-medium">{itemErrors.unit_price}</span>
-                        )}
+                    {/* PRECIO UNITARIO Y DESGLOSE */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="form-control w-full">
+                            <label className="label py-1">
+                                <span className="label-text text-xs font-semibold text-base-content">
+                                    Precio Unitario ($) <span className="text-error">*</span>
+                                </span>
+                            </label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                placeholder="0.00"
+                                className={`input input-bordered w-full h-11 text-xs sm:text-sm font-medium rounded-xl border-base-300 focus:border-primary ${itemErrors.unit_price ? 'border-error' : ''}`}
+                                value={itemForm.unit_price}
+                                onChange={(e) => setItemForm({ ...itemForm, unit_price: e.target.value })}
+                            />
+                            {itemErrors.unit_price && (
+                                <span className="text-xs text-error mt-0.5 font-medium">{itemErrors.unit_price}</span>
+                            )}
+                        </div>
+
+                        <div className="form-control w-full">
+                            <label className="label py-1">
+                                <span className="label-text text-xs font-semibold text-base-content">
+                                    Desglose del Precio (opcional)
+                                </span>
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="Ej: 2000 mas 450 de mano de obra por 1 gramo extra"
+                                className="input input-bordered w-full h-11 text-xs sm:text-sm font-medium rounded-xl border-base-300 focus:border-primary"
+                                value={itemForm.price_detail || ''}
+                                onChange={(e) => setItemForm({ ...itemForm, price_detail: e.target.value })}
+                            />
+                        </div>
                     </div>
 
                     {/* OBSERVACIONES / DETALLES DE MATERIAL */}
@@ -1751,11 +1836,10 @@ export default function OrderDetail() {
                                     key={method.id}
                                     type="button"
                                     onClick={() => setPaymentForm({ ...paymentForm, payment_method: method.id })}
-                                    className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-xs font-bold transition-all ${
-                                        paymentForm.payment_method === method.id
+                                    className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-xs font-bold transition-all ${paymentForm.payment_method === method.id
                                             ? 'border-primary bg-primary/10 text-primary shadow-xs'
                                             : 'border-base-300 hover:border-base-400 bg-base-100 text-base-content/70'
-                                    }`}
+                                        }`}
                                 >
                                     <span className="text-lg mb-0.5">{method.icon}</span>
                                     <span>{method.label}</span>

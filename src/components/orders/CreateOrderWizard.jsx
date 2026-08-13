@@ -20,6 +20,7 @@ const itemSchema = z.object({
     material_details: z.string().optional().default(""),
     service_requested: z.string().min(1, "Servicio solicitado requerido"),
     unit_price: z.coerce.number({ invalid_type_error: "El precio debe ser un número válido" }).optional().default(0.00),
+    price_detail: z.string().nullable().optional().default(null),
     photo_ids: z.array(z.string()).optional().default([]),
 })
 
