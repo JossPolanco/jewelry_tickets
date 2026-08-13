@@ -1,5 +1,5 @@
 import SignatureCanvas from 'react-signature-canvas'
-import React, { useRef, useEffect, useImperativeHandle, forwardRef } from 'react'
+import React, { useRef, useEffect, useImperativeHandle, forwardRef, useCallback } from 'react'
 
 const SignatureInput = forwardRef(function SignatureInput(
     { value, onChange, onSave, onClear, disabled = false, className = '' },
@@ -16,7 +16,7 @@ const SignatureInput = forwardRef(function SignatureInput(
     }
 
     // Ajusta la resolución interna del canvas al tamaño real del contenedor para evitar desfasamiento del puntero
-    const resizeCanvas = () => {
+    const resizeCanvas = useCallback(() => {
         if (!sigPadRef.current || !containerRef.current) return
         const canvas = sigPadRef.current.getCanvas()
         if (!canvas) return
@@ -29,7 +29,15 @@ const SignatureInput = forwardRef(function SignatureInput(
         const newHeight = Math.floor(rect.height * ratio)
 
         if (canvas.width !== newWidth || canvas.height !== newHeight) {
-            const savedData = sigPadRef.current.isEmpty() ? null : sigPadRef.current.toData()
+            // Guardar datos actuales antes de reajustar dimensiones del canvas
+            let currentPoints = null
+            if (sigPadRef.current && !sigPadRef.current.isEmpty()) {
+                currentPoints = sigPadRef.current.toData()
+            } else if (value) {
+                try {
+                    currentPoints = typeof value === 'string' ? JSON.parse(value) : value
+                } catch (e) {}
+            }
 
             canvas.width = newWidth
             canvas.height = newHeight
@@ -37,11 +45,11 @@ const SignatureInput = forwardRef(function SignatureInput(
             ctx.scale(ratio, ratio)
 
             sigPadRef.current.clear()
-            if (savedData && savedData.length > 0) {
-                sigPadRef.current.fromData(savedData)
+            if (currentPoints && Array.isArray(currentPoints) && currentPoints.length > 0) {
+                sigPadRef.current.fromData(currentPoints)
             }
         }
-    }
+    }, [value])
 
     useEffect(() => {
         resizeCanvas()
@@ -54,7 +62,7 @@ const SignatureInput = forwardRef(function SignatureInput(
         return () => {
             resizeObserver.disconnect()
         }
-    }, [])
+    }, [resizeCanvas])
 
     // Obtiene los datos de la firma en formato JSONB (array de trazos/puntos de react-signature-canvas)
     const getSignatureData = () => {
@@ -76,8 +84,12 @@ const SignatureInput = forwardRef(function SignatureInput(
     useEffect(() => {
         if (!sigPadRef.current) return
 
+        resizeCanvas()
+
         if (!value) {
-            sigPadRef.current.clear()
+            if (!sigPadRef.current.isEmpty()) {
+                sigPadRef.current.clear()
+            }
             return
         }
 
@@ -88,11 +100,13 @@ const SignatureInput = forwardRef(function SignatureInput(
                 if (JSON.stringify(currentData) !== JSON.stringify(dataToLoad)) {
                     sigPadRef.current.fromData(dataToLoad)
                 }
+            } else if (!sigPadRef.current.isEmpty()) {
+                sigPadRef.current.clear()
             }
         } catch (error) {
             console.error('Error al cargar datos de la firma:', error)
         }
-    }, [value])
+    }, [value, resizeCanvas])
 
     const handleBegin = () => {
         handleCanvasInteraction()

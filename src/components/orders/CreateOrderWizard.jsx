@@ -264,7 +264,18 @@ export default function CreateOrderWizard({ onClose, showToast }) {
 
                     {/* Step Content Area */}
                     <div className="bg-base-100/50 rounded-2xl p-2 sm:p-3 border border-base-200">
-                        {renderStepContent()}
+                        <div className={currentStep === 1 ? 'block' : 'hidden'}>
+                            <StepClient />
+                        </div>
+                        <div className={currentStep === 2 ? 'block' : 'hidden'}>
+                            <StepItems />
+                        </div>
+                        <div className={currentStep === 3 ? 'block' : 'hidden'}>
+                            <StepCostsDate />
+                        </div>
+                        <div className={currentStep === 4 ? 'block' : 'hidden'}>
+                            <StepSignature />
+                        </div>
                     </div>
 
                     {/* Footer Navigation Buttons (Sticky at Bottom) */}
