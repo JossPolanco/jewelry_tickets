@@ -92,8 +92,6 @@ export default function UploadPanel({
             console.error("No se pudo subir la imagen porque no hay un usuario autenticado.");
             return;
         }
-        // Limpia el input para permitir seleccionar el mismo archivo de nuevo
-        e.target.value = ''
         upload(file, currentUser.id)
     }
 
@@ -121,7 +119,10 @@ export default function UploadPanel({
 
                 <button
                     className="btn btn-primary w-full"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => {
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                        fileInputRef.current?.click();
+                    }}
                     disabled={isBtnDisabled}
                     type="button"
                 >

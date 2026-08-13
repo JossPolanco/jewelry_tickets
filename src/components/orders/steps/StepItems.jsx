@@ -65,7 +65,6 @@ function ItemPhotoManager({ photos = [], onChangePhotos }) {
     const handleFileChange = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        e.target.value = '';
 
         const targetUserId = await getTargetUserId();
         if (!targetUserId) return;
@@ -175,7 +174,10 @@ function ItemPhotoManager({ photos = [], onChangePhotos }) {
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => fileInputRef.current?.click()}
+                                        onClick={() => {
+                                            if (fileInputRef.current) fileInputRef.current.value = '';
+                                            fileInputRef.current?.click();
+                                        }}
                                         className="btn btn-outline btn-xs rounded-lg font-bold gap-1 text-base-content/70 hover:text-primary active:scale-95 transition-all text-[11px]"
                                         title="Seleccionar de la galería de imágenes"
                                     >

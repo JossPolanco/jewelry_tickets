@@ -12,14 +12,46 @@ export const BUCKETS = {
     DRAWINGS: "photos",
 };
 
+// CONVIERTE CUALQUIER FILE O BLOB A ARRAYBUFFER PARA EVITAR ERRORES DE FETCH EN NAVEGADORES MÓVILES
+const fileToArrayBuffer = async (file) => {
+    if (typeof file.arrayBuffer === "function") {
+        try {
+            return await file.arrayBuffer();
+        } catch (e) {
+            console.warn("[imageUploader] file.arrayBuffer() falló, usando FileReader fallback:", e);
+        }
+    }
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = () => reject(new Error("No se pudo leer el archivo como ArrayBuffer."));
+        reader.readAsArrayBuffer(file);
+    });
+};
+
+// GENERADOR SEGURO DE UUID v4 QUE FUNCIONA EN HTTP, HTTPS Y NAVEGADORES MÓVILES
+const generateUUID = () => {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+        try {
+            return crypto.randomUUID();
+        } catch {
+            // Fallback si falla en contextos no seguros (HTTP)
+        }
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+};
+
 // GENERA UN PATH ÚNICO PARA CADA IMAGEN
 const generateStoragePath = (userId, fileName, mimeType) => {
     const now = new Date();
     const year = now.getFullYear();
     // Mes con padding: 06, 11, etc.
     const month = String(now.getMonth() + 1).padStart(2, "0");
-    // UUID v4 simple usando crypto.randomUUID() nativo del navegador
-    const uuid = crypto.randomUUID();
+    const uuid = generateUUID();
     
     let ext = "webp";
     if (mimeType === "image/jpeg" || mimeType === "image/jpg") ext = "jpg";
@@ -40,7 +72,7 @@ const validateBucket = (bucket) => {
 
 // FUNCION PRINCIPAL PARA SUBIR LA IMAGEN
 export const uploadImage = async (file, bucket, userId) => {
-    if (!file || !(file instanceof File)) {
+    if (!file || !(file instanceof File || file instanceof Blob)) {
         throw new Error("No se proporcionó un archivo válido.");
     }
 
@@ -49,16 +81,28 @@ export const uploadImage = async (file, bucket, userId) => {
     }
 
     const targetBucket = BUCKETS.PHOTOS;
-    const storagePath = generateStoragePath(userId, file.name, file.type);
+    const storagePath = generateStoragePath(userId, file?.name, file?.type);
+
+    // En navegadores móviles (iOS Safari / Android WebViews), fetch() falla con 'Failed to fetch' 
+    // si se pasa un File sintético creado en memoria como body. 
+    // Convertirlo a ArrayBuffer garantiza envío binario 100% compatible.
+    let uploadData;
+    try {
+        uploadData = await fileToArrayBuffer(file);
+    } catch (err) {
+        console.warn("[uploadImage] No se pudo convertir a ArrayBuffer, usando file directamente:", err);
+        uploadData = file;
+    }
 
     const { error } = await supabaseClient.storage
         .from(targetBucket)
-        .upload(storagePath, file, {
+        .upload(storagePath, uploadData, {
             contentType: file.type || "image/webp",
-            upsert: false,
+            upsert: true,
         });
 
     if (error) {
+        console.error("[uploadImage] Error en Supabase Storage:", error);
         const message = error.message?.toLowerCase() ?? "";
 
         if (message.includes("duplicate") || message.includes("already exists")) {
@@ -71,26 +115,24 @@ export const uploadImage = async (file, bucket, userId) => {
             );
         }
 
-        if (message.includes("unauthorized") || message.includes("not authorized") || message.includes("row-level security")) {
+        if (message.includes("unauthorized") || message.includes("not authorized") || message.includes("row-level security") || message.includes("policy")) {
             throw new Error(
                 "No tienes permisos para subir imágenes. Verifica que tu sesión esté activa.",
             );
         }
 
-        if (message.includes("network") || message.includes("fetch") || message.includes("failed")) {
-            throw new Error(
-                "Error de conexión. Verifica tu internet e intenta nuevamente.",
-            );
+        if (typeof window !== "undefined" && window.navigator && window.navigator.onLine === false) {
+            throw new Error("Sin conexión a internet. Verifica tu conexión e intenta nuevamente.");
         }
 
-        throw new Error(`Error al subir la imagen: ${error.message}`);
+        throw new Error(`Error al subir la imagen: ${error.message || "Error de servidor"}`);
     }
 
     return {
         success: true,
         data: {
             storagePath,
-            bucket,
+            bucket: targetBucket,
             fileSize: file.size,
         },
     };

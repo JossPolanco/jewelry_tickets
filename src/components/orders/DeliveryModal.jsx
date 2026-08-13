@@ -73,7 +73,6 @@ const DeliveryModal = forwardRef(function DeliveryModal({ order, onSuccess, onSh
     const handlePhotoFileChange = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        e.target.value = '';
 
         let targetUserId = user?.id || loadingUser?.id;
         if (!targetUserId) {
@@ -318,7 +317,10 @@ const DeliveryModal = forwardRef(function DeliveryModal({ order, onSuccess, onSh
                         {deliveryPhotos.length < 2 && (
                             <button
                                 type="button"
-                                onClick={() => photoInputRef.current?.click()}
+                                onClick={() => {
+                                    if (photoInputRef.current) photoInputRef.current.value = '';
+                                    photoInputRef.current?.click();
+                                }}
                                 disabled={isUploadingPhoto}
                                 className={`border-2 border-dashed border-base-300 hover:border-primary/60 rounded-xl p-3 flex flex-col items-center justify-center gap-1 text-base-content/70 hover:text-primary transition-all aspect-video min-h-24 min-w-11${isUploadingPhoto ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer bg-base-100 hover:bg-primary/5'}`}
                             >

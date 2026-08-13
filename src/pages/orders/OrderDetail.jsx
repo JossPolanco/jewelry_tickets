@@ -77,7 +77,6 @@ function ItemPhotoManager({ photos = [], onChangePhotos }) {
     const handleFileChange = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        e.target.value = '';
 
         let targetUserId = user?.id || loadingUser?.id;
         if (!targetUserId) {
@@ -168,7 +167,10 @@ function ItemPhotoManager({ photos = [], onChangePhotos }) {
                 {photos.length < 2 && (
                     <button
                         type="button"
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={() => {
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                            fileInputRef.current?.click();
+                        }}
                         disabled={isUploading}
                         className={`border-2 border-dashed border-base-300 hover:border-primary/60 rounded-xl p-3 flex flex-col items-center justify-center gap-1.5 text-base-content/60 hover:text-primary transition-all aspect-video min-h-24 ${isUploading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-primary/5'}`}
                     >
