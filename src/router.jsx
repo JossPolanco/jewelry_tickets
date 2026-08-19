@@ -15,6 +15,9 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 // CLIENTS PAGES
 const Clients = lazy(() => import("./pages/clients/Clients"));
 
+// ALBUMS PAGES
+const Albums = lazy(() => import("./pages/albums/Albums"));
+
 // ORDERS PAGES
 const Orders = lazy(() => import("./pages/orders/ServiceOrders"));
 const OrderDetail = lazy(() => import("./pages/orders/OrderDetail"));
@@ -57,10 +60,19 @@ export const router = createBrowserRouter([
         element: <LazyPage><Login /></LazyPage>,
         errorElement: <RootErrorBoundary />
     },
+    // {
+    //     path: "/register",
+    //     element: (
+    //         <LazyPage><Register /></LazyPage>
+    //     ),
+    //     errorElement: <RootErrorBoundary />
+    // },
     {
-        path: "/register",
+        path: "/album",
         element: (
-            <LazyPage><Register /></LazyPage>
+            <Layout>
+                <LazyPage><Albums /></LazyPage>
+            </Layout>
         ),
         errorElement: <RootErrorBoundary />
     },

@@ -912,83 +912,88 @@ export default function OrderDetail() {
                     </div>
 
                     {/* BOTONES DE ACCIÓN PRINCIPALES */}
-                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-base-200">
+                    <div className="grid grid-cols-2 sm:flex sm:flex-nowrap items-center gap-2 w-full sm:w-auto sm:justify-end pt-4 sm:pt-0 border-t sm:border-t-0 border-base-200 mt-2 sm:mt-0">
                         <Suspense fallback={
-                            <span className="btn btn-error btn-sm h-11 rounded-xl font-bold gap-1.5 shadow-xs transition-all text-xs sm:text-sm flex-1 sm:flex-none text-white pointer-events-none opacity-70 flex items-center justify-center">
-                                <Download className="w-4 h-4" />
-                                Cargando...
-                            </span>
+                            <div className="flex w-full">
+                                <span className="btn w-full btn-error btn-sm h-10 rounded-xl font-bold gap-1.5 shadow-xs transition-all text-xs sm:text-sm text-white pointer-events-none opacity-70 flex items-center justify-center">
+                                    <Download className="w-4 h-4" />
+                                    <span className="truncate">Cargando...</span>
+                                </span>
+                            </div>
                         }>
-                            <PDFDownloadLink
-                                key={`${fullPreparedOrder?.order_items?.map((i) => i.photos?.map((p) => p.dataUrl || p.id).join('-')).join('_') || 'pdf'}_${termsAndConditions?.terms_and_conditions ? 'terms' : 'noterms'}_${organizationInfo?.name || 'noorg'}`}
-                                document={
-                                    <OrderServicePDF
-                                        order={fullPreparedOrder || order}
-                                        itemPhotosMap={resolvedItemPhotos}
-                                        termsAndConditions={termsAndConditions?.terms_and_conditions}
-                                        organizationInfo={organizationInfo}
-                                    />
-                                }
-                                fileName={`Orden_${order?.folio || 'servicio'}.pdf`}
-                            >
-                                {({ blob, url, loading, error }) => (
-                                    loading ? (
-                                        <span
-                                            className="btn btn-error btn-sm h-11 rounded-xl font-bold gap-1.5 shadow-xs transition-all text-xs sm:text-sm flex-1 sm:flex-none text-white pointer-events-none opacity-70 flex items-center justify-center"
-                                        >
-                                            <Download className="w-4 h-4" />
-                                            Cargando...
-                                        </span>
-                                    ) : (
-                                        <span
-                                            className="btn btn-error btn-sm h-11 rounded-xl font-bold gap-1.5 shadow-xs active:scale-95 transition-all text-xs sm:text-sm flex-1 sm:flex-none text-white flex items-center justify-center"
-                                        >
-                                            <Download className="w-4 h-4" />
-                                            Descargar PDF
-                                        </span>
-                                    )
-                                )}
-                            </PDFDownloadLink>
+                            <div className="flex w-full">
+                                <PDFDownloadLink
+                                    className="w-full"
+                                    key={`${fullPreparedOrder?.order_items?.map((i) => i.photos?.map((p) => p.dataUrl || p.id).join('-')).join('_') || 'pdf'}_${termsAndConditions?.terms_and_conditions ? 'terms' : 'noterms'}_${organizationInfo?.name || 'noorg'}`}
+                                    document={
+                                        <OrderServicePDF
+                                            order={fullPreparedOrder || order}
+                                            itemPhotosMap={resolvedItemPhotos}
+                                            termsAndConditions={termsAndConditions?.terms_and_conditions}
+                                            organizationInfo={organizationInfo}
+                                        />
+                                    }
+                                    fileName={`Orden_${order?.folio || 'servicio'}.pdf`}
+                                >
+                                    {({ blob, url, loading, error }) => (
+                                        loading ? (
+                                            <span
+                                                className="btn w-full btn-error btn-sm h-10 rounded-xl font-bold gap-1.5 shadow-xs transition-all text-xs sm:text-sm text-white pointer-events-none opacity-70 flex items-center justify-center"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                                <span className="truncate">Cargando...</span>
+                                            </span>
+                                        ) : (
+                                            <span
+                                                className="btn w-full btn-error btn-sm h-10 rounded-xl font-bold gap-1.5 shadow-xs active:scale-95 transition-all text-xs sm:text-sm text-white flex items-center justify-center"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                                <span className="truncate">Descargar PDF</span>
+                                            </span>
+                                        )
+                                    )}
+                                </PDFDownloadLink>
+                            </div>
                         </Suspense>
 
                         {customer?.phone && (
                             <button
                                 type="button"
                                 onClick={handleSendWhatsApp}
-                                className="btn btn-success btn-sm h-11 rounded-xl text-white font-bold gap-1.5 shadow-xs active:scale-95 transition-all text-xs sm:text-sm flex-1 sm:flex-none"
+                                className="btn w-full btn-success btn-sm h-10 rounded-xl text-white font-bold gap-1.5 shadow-xs active:scale-95 transition-all text-xs sm:text-sm flex items-center justify-center"
                                 title="Enviar comprobante por WhatsApp"
                             >
                                 <Send className="w-4 h-4" />
-                                <span className="hidden xs:inline">Enviar</span> WhatsApp
+                                <span className="truncate">WhatsApp</span>
                             </button>
                         )}
 
                         <button
                             type="button"
                             onClick={handleOpenEditOrderModal}
-                            className="btn btn-primary btn-sm h-11 rounded-xl font-bold gap-1.5 shadow-xs active:scale-95 transition-all text-xs sm:text-sm flex-1 sm:flex-none"
+                            className="btn w-full btn-primary btn-sm h-10 rounded-xl font-bold gap-1.5 shadow-xs active:scale-95 transition-all text-xs sm:text-sm flex items-center justify-center"
                         >
                             <Edit3 className="w-4 h-4" />
-                            Editar Orden
+                            <span className="truncate">Editar Orden</span>
                         </button>
 
                         {order.status === 'Entregado' ? (
                             <span
-                                className="btn btn-neutral btn-sm h-11 rounded-xl font-bold gap-1.5 shadow-xs text-xs sm:text-sm flex-1 sm:flex-none border border-emerald-500/40 bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 cursor-default"
+                                className="btn w-full btn-neutral btn-sm h-10 rounded-xl font-bold gap-1.5 shadow-xs text-xs sm:text-sm border border-emerald-500/40 bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 cursor-default flex items-center justify-center"
                                 title="La orden ha sido entregada y finiquitada"
                             >
                                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                                Entregado
+                                <span className="truncate">Entregado</span>
                             </span>
                         ) : (
                             <button
                                 type="button"
                                 onClick={() => deliveryModalRef.current?.open()}
-                                className="btn btn-success btn-sm h-11 rounded-xl text-white font-extrabold gap-1.5 shadow-xs active:scale-95 transition-all text-xs sm:text-sm flex-1 sm:flex-none"
+                                className="btn w-full btn-success btn-sm h-10 rounded-xl text-white font-extrabold gap-1.5 shadow-xs active:scale-95 transition-all text-xs sm:text-sm flex items-center justify-center"
                                 title="Firma y Comprobante de Entrega"
                             >
                                 <PackageCheck className="w-4 h-4" />
-                                Entregar Orden
+                                <span className="truncate">Entregar Orden</span>
                             </button>
                         )}
                     </div>

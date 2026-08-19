@@ -25,3 +25,6 @@ export { default as StepItems } from './orders/steps/StepItems'
 export { default as StepCostsDate } from './orders/steps/StepCostsDate'
 export { default as StepSignature } from './orders/steps/StepSignature'
 
+// ALBUMS COMPONENTS
+export { default as RingsAlbum } from './albums/RingsAlbum';
+

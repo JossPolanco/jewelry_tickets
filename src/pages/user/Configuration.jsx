@@ -1,4 +1,4 @@
-import { Lock, Palette, Pencil, MapPin, Building2, Phone, FileText, AlertCircle, LogOut } from 'lucide-react';
+import { Lock, Palette, Pencil, MapPin, Building2, Phone, FileText, AlertCircle, LogOut, Images } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { getOrganizationById, updateOrganization } from '@/services/config';
 import { logoutUser } from "../../services/auth/authService";
@@ -311,6 +311,32 @@ export default function Configuration() {
                 </div>
             </div>
 
+            {/* THEME CARD */}
+            <div className="card bg-base-100 rounded-3xl border border-base-200/50 shadow-sm">
+                <div className="card-body p-5 sm:p-6 flex flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-2xl bg-success/10 text-success shrink-0">
+                            <Images size={20} />
+                        </div>
+                        <div>
+                            <h2 className="font-semibold text-base text-base-content">
+                                Álbum de Fotos
+                            </h2>
+                            <p className="text-xs text-base-content/50 mt-0.5">
+                                Fotos de los anillos en formato de album.
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        className="btn btn-primary btn-sm rounded-full px-5 font-semibold text-xs active:scale-95 transition-transform shrink-0"
+                        onClick={() => navigate('/album')}
+                    >
+                        Ir al album
+                    </button>
+                </div>
+            </div>
+
             {/* PASSWORD CARD */}
             <div className="card bg-base-100 rounded-3xl border border-base-200/50 shadow-sm">
                 <div className="card-body p-5 sm:p-6 flex flex-row items-center justify-between gap-4">
@@ -381,7 +407,7 @@ export default function Configuration() {
                         </ul>
                     </div>
                 </div>
-            </div>
+            </div>            
 
             {/* INFORMACION DE ORGANIZACION */}
             <Modal

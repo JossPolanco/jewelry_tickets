@@ -120,7 +120,7 @@ export default function Login() {
                                 )}
                             </div>
 
-                            <div className="flex justify-start text-sm">
+                            {/* <div className="flex justify-start text-sm">
                                 <button
                                     type="button"
                                     className="link link-primary link-hover font-medium text-xs"
@@ -128,7 +128,7 @@ export default function Login() {
                                 >
                                     Crear Cuenta
                                 </button>
-                            </div>
+                            </div> */}
 
                             {loginMutation.isError && (
                                 <div className="alert alert-error text-sm py-3 px-4 rounded-xl flex items-start gap-2 shadow-sm">
