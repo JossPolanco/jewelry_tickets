@@ -70,9 +70,7 @@ export const router = createBrowserRouter([
     {
         path: "/album",
         element: (
-            <Layout>
-                <LazyPage><Albums /></LazyPage>
-            </Layout>
+            <LazyPage><Albums /></LazyPage>
         ),
         errorElement: <RootErrorBoundary />
     },
